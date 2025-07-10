@@ -121,6 +121,32 @@ CREATE TABLE IF NOT EXISTS tournament_discussions (
     FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE,
     FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    type TEXT NOT NULL, -- 'tournament_invite', 'match_result', 'comment_reply', 'new_follower'
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    related_id INTEGER, -- Optional: ID of related item
+    related_type TEXT, -- 'tournament', 'match', 'post', 'user'
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS user_achievements (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    achievement_type TEXT NOT NULL, -- e.g. 'tournament_winner', 'streak_master'
+    achievement_name TEXT NOT NULL,
+    description TEXT,
+    earned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    tournament_id INTEGER, -- Optional FK if achievement is tournament-related
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE SET NULL
+);
+
 """)
 
 # Save and close
