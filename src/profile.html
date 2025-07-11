@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GameVibe Arena - User Profile</title>
+  <link rel="stylesheet" href="styles/main.css">
+  <style>
+    :root {
+      --glass-bg: rgba(30, 34, 45, 0.75);
+      --glass-blur: 18px;
+      --gradient-main: linear-gradient(90deg, #6a82fb 0%, #fc5c7d 100%);
+      --gradient-accent: linear-gradient(90deg, #232526 0%, #6a82fb 100%);
+      --card-radius: 24px;
+      --nav-height: 64px;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #181a20;
+      color: #fff;
+      min-height: 100vh;
+    }
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--nav-height);
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px #0003;
+    }
+    .nav-inner {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+    }
+    .nav-logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: var(--gradient-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      white-space: nowrap;
+    }
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+    .nav-link {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1rem;
+      transition: color 0.2s;
+      position: relative;
+      padding: 0.2rem 0.5rem;
+      border-radius: 8px;
+      display: inline-block;
+    }
+    .nav-link:focus, .nav-link:hover {
+      color: #6a82fb;
+      background: rgba(106,130,251,0.08);
+    }
+    .profile-main {
+      margin-top: calc(var(--nav-height) + 2.5rem);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+      padding-bottom: 2rem;
+      min-height: 100vh;
+      background: linear-gradient(120deg, #232526 60%, #6a82fb 100%);
+    }
+    .profile-glass {
+      background: var(--glass-bg);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.25);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      border-radius: var(--card-radius);
+      border: 1.5px solid rgba(255, 255, 255, 0.10);
+      padding: 2rem 1.2rem 2.5rem 1.2rem;
+      max-width: 1200px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      align-items: center;
+      animation: fadeIn 1s cubic-bezier(.4,0,.2,1);
+      margin-top: 1.5rem;
+    }
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 600px;
+      justify-content: flex-start;
+    }
+    .profile-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 3px solid #6a82fb;
+      box-shadow: 0 2px 12px #6a82fb55;
+      object-fit: cover;
+      background: #232526;
+    }
+    .profile-info {
+      flex: 1;
+    }
+    .profile-username {
+      margin: 0 0 0.3rem 0;
+      font-size: 2rem;
+      font-weight: 700;
+      background: var(--gradient-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .profile-bio {
+      margin: 0 0 0.5rem 0;
+      font-size: 1rem;
+      color: #e0e0e0;
+    }
+    .profile-lastlogin {
+      font-size: 0.95rem;
+      color: #b3b3b3;
+    }
+    .profile-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
+    .btn {
+      padding: 0.6rem 1.4rem;
+      border: none;
+      border-radius: 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--gradient-main);
+      color: #fff;
+      box-shadow: 0 2px 8px #6a82fb33;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn:focus {
+      outline: 2px solid #6a82fb;
+      outline-offset: 2px;
+    }
+    .btn:hover {
+      transform: scale(1.07);
+      box-shadow: 0 4px 16px #fc5c7d44;
+    }
+    .btn.edit {
+      background: var(--gradient-accent);
+    }
+    .profile-stats {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 800px;
+      flex-wrap: wrap;
+    }
+    .stat {
+      background: rgba(106, 130, 251, 0.15);
+      border-radius: 10px;
+      padding: 0.7rem 1.2rem;
+      text-align: center;
+      min-width: 120px;
+      flex: 1;
+    }
+    .stat-label {
+      display: block;
+      font-size: 0.9rem;
+      color: #b3b3b3;
+    }
+    .stat-value {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .profile-badges {
+      display: flex;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+      width: 100%;
+      max-width: 800px;
+      justify-content: center;
+    }
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--gradient-main);
+      color: #fff;
+      border-radius: 12px;
+      padding: 0.2rem 0.7rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      box-shadow: 0 1px 4px #6a82fb33;
+    }
+    .badge-icon {
+      font-size: 1.2em;
+    }
+    .badge-desc {
+      font-size: 0.9em;
+      color: #e0e0e0;
+      margin-left: 0.3em;
+    }
+    .profile-tabs {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+      margin-bottom: 0;
+      width: 100%;
+      max-width: 800px;
+      justify-content: center;
+      z-index: 10;
+      position: relative;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 0.5rem 1.2rem;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .tab-btn.active, .tab-btn:focus {
+      background: var(--gradient-main);
+      color: #fff;
+      outline: none;
+    }
+    .tab-content {
+      width: 100%;
+      background: var(--glass-bg);
+      border-radius: 1.5rem;
+      box-shadow: 0 2px 12px #6a82fb22;
+      padding: 1.2rem 0.5rem 1.2rem 0.5rem;
+      margin-top: 1rem;
+      margin-bottom: 1.5rem;
+      min-height: 120px;
+      animation: fadeIn 0.7s cubic-bezier(.4,0,.2,1);
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      position: relative;
+      z-index: 1;
+    }
+    /* Instagram-like card styles for lists */
+    .insta-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .insta-card {
+      background: rgba(40, 44, 60, 0.85);
+      border-radius: 1.2rem;
+      box-shadow: 0 2px 8px #6a82fb33;
+      padding: 1rem 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: transform 0.15s, box-shadow 0.15s;
+      border: 1.5px solid rgba(106, 130, 251, 0.18);
+    }
+    .insta-card:hover {
+      transform: scale(1.03);
+      box-shadow: 0 4px 16px #fc5c7d44;
+    }
+    .insta-thumb {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      object-fit: cover;
+      background: #232526;
+      border: 2px solid #6a82fb;
+    }
+    .insta-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .insta-title {
+      font-weight: 600;
+      font-size: 1.08rem;
+      color: #fff;
+    }
+    .insta-meta {
+      font-size: 0.95rem;
+      color: #b3b3b3;
+    }
+    .insta-action {
+      font-size: 0.9rem;
+      color: #6a82fb;
+      font-weight: 500;
+      margin-left: 0.5rem;
+    }
+    .ai-suggestion {
+      background: rgba(255,255,255,0.10);
+      border-radius: 16px;
+      padding: 1rem 1.2rem;
+      margin-top: 0.5rem;
+      box-shadow: 0 1px 6px #6a82fb22;
+      width: 100%;
+      max-width: 800px;
+    }
+    .ai-suggestion h2 {
+      margin: 0 0 0.3rem 0;
+      font-size: 1.1rem;
+      color: #6a82fb;
+    }
+    .ai-suggestion p {
+      margin: 0;
+      color: #fff;
+      font-size: 1rem;
+    }
+    @media (max-width: 700px) {
+      .nav-inner {
+        padding: 0 0.5rem;
+      }
+      .nav-links {
+        gap: 1rem;
+      }
+      .profile-glass {
+        padding: 1.2rem 0.5rem;
+        max-width: 98vw;
+      }
+      .profile-header {
+        flex-direction: column;
+        gap: 0.7rem;
+        align-items: center;
+        max-width: 100%;
+      }
+      .profile-stats {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .profile-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .profile-tabs {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <nav aria-label="Main Navigation">
+    <div class="nav-inner">
+      <span class="nav-logo">GameVibe Arena</span>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link" tabindex="0">Home</a>
+        <a href="tournaments.html" class="nav-link" tabindex="0">Tournaments</a>
+        <a href="social.html" class="nav-link" tabindex="0">Social</a>
+        <a href="profile.html" class="nav-link" tabindex="0">Profile</a>
+        <a href="notifications.html" class="nav-link" tabindex="0">Notifications</a>
+      </div>
+    </div>
+  </nav>
+  <main class="profile-main">
+    <section class="profile-glass" aria-label="User Profile">
+      <div class="profile-header">
+        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User Avatar" class="profile-avatar">
+        <div class="profile-info">
+          <h1 class="profile-username">GamerTag123</h1>
+          <p class="profile-bio">Competitive gamer. FPS enthusiast. Always up for a challenge!</p>
+          <div class="profile-lastlogin">Last login: 2025-07-10 21:45</div>
+        </div>
+      </div>
+      <div class="profile-actions">
+        <button class="btn follow" tabindex="0">Follow</button>
+        <button class="btn message" tabindex="0">Message</button>
+        <button class="btn edit" tabindex="0">Edit Profile</button>
+      </div>
+      <div class="profile-stats" aria-label="GameHub Stats">
+        <div class="stat">
+          <span class="stat-label">Total Hours Played</span>
+          <span class="stat-value">1,250</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Top Games</span>
+          <span class="stat-value">Valorant (500h), Apex Legends (400h), Rocket League (350h)</span>
+        </div>
+      </div>
+      <div class="profile-badges" aria-label="User Achievements">
+        <span class="badge"><span class="badge-icon" aria-hidden="true">🏆</span> Pro <span class="badge-desc">Top 1% in tournaments</span></span>
+        <span class="badge"><span class="badge-icon" aria-hidden="true">🔥</span> Streak 10 <span class="badge-desc">10 wins in a row</span></span>
+        <span class="badge"><span class="badge-icon" aria-hidden="true">🎯</span> Sharpshooter <span class="badge-desc">Highest accuracy</span></span>
+      </div>
+      <nav class="profile-tabs" aria-label="Profile Sections">
+        <button class="tab-btn active" tabindex="0" aria-controls="tab-tournaments">Tournaments</button>
+        <button class="tab-btn" tabindex="0" aria-controls="tab-friends">Friends & Followers</button>
+        <button class="tab-btn" tabindex="0" aria-controls="tab-posts">Posts</button>
+      </nav>
+      <section class="tab-content" id="tab-tournaments" aria-label="Tournaments Joined">
+        <ul class="insta-list">
+          <li class="insta-card">
+            <img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=facearea&w=256&h=256" alt="Tournament Logo" class="insta-thumb">
+            <div class="insta-content">
+              <span class="insta-title">Summer Showdown 2025</span>
+              <span class="insta-meta">Joined: 2025-06-20 · Status: Ongoing</span>
+            </div>
+            <span class="insta-action">View</span>
+          </li>
+          <li class="insta-card">
+            <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=facearea&w=256&h=256" alt="Tournament Logo" class="insta-thumb">
+            <div class="insta-content">
+              <span class="insta-title">Valorant Masters</span>
+              <span class="insta-meta">Joined: 2025-05-15 · Status: Finished</span>
+            </div>
+            <span class="insta-action">View</span>
+          </li>
+        </ul>
+      </section>
+      <section class="tab-content" id="tab-friends" style="display:none" aria-label="Friends and Followers">
+        <ul class="insta-list">
+          <li class="insta-card">
+            <img src="https://randomuser.me/api/portraits/men/45.jpg" alt="Friend Avatar" class="insta-thumb">
+            <div class="insta-content">
+              <span class="insta-title">PlayerOne</span>
+              <span class="insta-meta">Friend · Online</span>
+            </div>
+            <span class="insta-action">Message</span>
+          </li>
+          <li class="insta-card">
+            <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="Follower Avatar" class="insta-thumb">
+            <div class="insta-content">
+              <span class="insta-title">GameFanatic</span>
+              <span class="insta-meta">Follower · Last active 2h ago</span>
+            </div>
+            <span class="insta-action">Follow Back</span>
+          </li>
+        </ul>
+      </section>
+      <section class="tab-content" id="tab-posts" style="display:none" aria-label="Recent Posts">
+        <ul class="insta-list">
+          <li class="insta-card">
+            <img src="https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=facearea&w=256&h=256" alt="Post Image" class="insta-thumb">
+            <div class="insta-content">
+              <span class="insta-title">Just hit a new high score in Rocket League! 🚀</span>
+              <span class="insta-meta">2025-07-09 · 120 Likes · 8 Comments</span>
+            </div>
+            <span class="insta-action">Like</span>
+          </li>
+          <li class="insta-card">
+            <img src="https://images.unsplash.com/photo-1503676382389-4809596d5290?auto=format&fit=facearea&w=256&h=256" alt="Post Image" class="insta-thumb">
+            <div class="insta-content">
+              <span class="insta-title">Looking for a team for the next tournament!</span>
+              <span class="insta-meta">2025-07-07 · 98 Likes · 5 Comments</span>
+            </div>
+            <span class="insta-action">Comment</span>
+          </li>
+        </ul>
+      </section>
+      <div class="ai-suggestion">
+        <h2>AI Post Suggestion</h2>
+        <p>"Share your latest tournament experience or challenge a friend to a match!"</p>
+      </div>
+    </section>
+  </main>
+  <script>
+    // Tab switching logic, keyboard accessible
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = [
+      document.getElementById('tab-tournaments'),
+      document.getElementById('tab-friends'),
+      document.getElementById('tab-posts')
+    ];
+    tabBtns.forEach((btn, idx) => {
+      btn.addEventListener('click', () => {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        tabContents.forEach((c, i) => c.style.display = i === idx ? '' : 'none');
+      });
+      btn.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') btn.click();
+      });
+    });
+  </script>
+</body>
+</html>

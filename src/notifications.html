@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GameVibe Arena - Notifications</title>
+  <link rel="stylesheet" href="styles/main.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+        --glass-bg: rgba(30, 34, 45, 0.75);
+        --glass-blur: 18px;
+        --gradient-main: linear-gradient(90deg, #6a82fb 0%, #fc5c7d 100%);
+        --gradient-accent: linear-gradient(90deg, #232526 0%, #6a82fb 100%);
+        --neon-blue: #6a82fb;
+        --card-radius: 24px;
+        --nav-height: 64px;
+      }
+      body {
+        margin: 0;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background: #181a20;
+        color: #fff;
+        min-height: 100vh;
+      }
+    nav.navbar {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        height: var(--nav-height);
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--glass-blur));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        z-index: 100;
+        box-shadow: 0 2px 12px #0003;
+      }
+    .nav-inner {
+        width: 100%;
+        max-width: 1100px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 2rem;
+      }
+      .nav-logo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: var(--gradient-main);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        white-space: nowrap;
+      }
+    .nav-links {
+      display: flex;
+      gap: 2.0rem;
+      align-items: wrap;
+    }
+      .nav-link {
+        color: #fff;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 1rem;
+        transition: color 0.2s;
+        position: relative;
+        padding: 0.2rem 0.5rem;
+        border-radius: 8px;
+        display: inline-block;
+      }
+ 
+      .nav-link.active, .nav-link:focus {
+        color: #6a82fb;
+        background: rgba(106,130,251,0.12);
+        outline: none;
+      }
+      .nav-link:hover {
+        color: #6a82fb;
+        background: rgba(106,130,251,0.08);
+      }
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      cursor: pointer;
+      margin-left: 1rem;
+    }
+    .hamburger span {
+      height: 3px;
+      width: 28px;
+      background: #fff;
+      margin: 4px 0;
+      border-radius: 2px;
+      transition: 0.3s;
+    }
+   
+    main.notifications-main {
+      margin-top: var(--nav-height);
+      padding: 2.5rem 0 2rem 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .notifications-header {
+      width: 100%;
+      max-width: 700px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+      gap: 0.3rem;
+    }
+    .notifications-title {
+      font-size: 2.1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      background: var(--gradient-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0;
+    }
+    .notifications-subtext {
+      color: #b0eaff;
+      font-size: 1.05rem;
+      font-weight: 400;
+      margin-bottom: 0.5rem;
+    }
+    .actions-bar {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+    }
+    .action-btn {
+      background: var(--gradient-accent);
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      padding: 0.5rem 1.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px #23252655;
+      transition: background 0.2s, box-shadow 0.2s;
+      font-family: var(--font-main);
+    }
+    .action-btn:hover, .action-btn:focus {
+      background: var(--gradient-main);
+      box-shadow: 0 4px 16px #00f2fe55;
+      outline: none;
+    }
+    .notifications-list {
+      width: 100%;
+      max-width: 700px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+    }
+    .notification-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      background: var(--glass-bg);
+      border-radius: var(--card-radius);
+      box-shadow: 0 4px 24px #00f2fe22;
+      padding: 1.25rem 1.5rem;
+      position: relative;
+      cursor: pointer;
+      transition: box-shadow 0.2s, background 0.2s, transform 0.2s;
+      border: 2px solid transparent;
+      animation: fadeIn 0.5s;
+      min-width: 0;
+    }
+    .notification-card.unread {
+      border-color: #00f2fe;
+      box-shadow: var(--unread-glow), 0 4px 24px #00f2fe22;
+      background: rgba(0, 242, 254, 0.10);
+      font-weight: 600;
+    }
+    .notification-card:focus {
+      outline: 2px solid #00f2fe;
+      outline-offset: 2px;
+    }
+    .notification-icon {
+      font-size: 1.7rem;
+      margin-top: 0.2rem;
+      flex-shrink: 0;
+      filter: drop-shadow(0 0 6px #00f2fe88);
+    }
+    .notification-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      min-width: 0;
+    }
+    .notification-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 0.1rem;
+      color: #fff;
+      text-shadow: 0 0 4px #00f2fe44;
+    }
+    .notification-message {
+      font-size: 0.98rem;
+      color: #e0e0e0;
+      margin-bottom: 0.1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 420px;
+    }
+    .notification-timestamp {
+      font-size: 0.85rem;
+      color: #b0b0b0;
+    }
+    .notification-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-left: 1rem;
+    }
+    .mark-btn, .delete-btn {
+      background: none;
+      border: none;
+      color: #00f2fe;
+      font-size: 1.1rem;
+      cursor: pointer;
+      border-radius: 8px;
+      padding: 0.2rem 0.7rem;
+      transition: background 0.2s, color 0.2s;
+      font-family: var(--font-main);
+    }
+    .mark-btn:hover, .mark-btn:focus {
+      background: #23252655;
+      color: #7f53ac;
+      outline: none;
+    }
+    .delete-btn:hover, .delete-btn:focus {
+      background: #23252655;
+      color: #ff4d4d;
+      outline: none;
+    }
+    @media (max-width: 800px) {
+      .notifications-header, .notifications-list {
+        max-width: 98vw;
+      }
+      .notification-message {
+        max-width: 200px;
+      }
+    }
+    @media (max-width: 600px) {
+      .notifications-header, .notifications-list {
+        padding: 0 0.5rem;
+      }
+      .notification-card {
+        padding: 1rem 0.7rem;
+      }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar" aria-label="Main Navigation">
+    <div class="nav-inner">
+      <span class="nav-logo">GameVibe Arena</span>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link" tabindex="0">Home</a>
+        <a href="tournaments.html" class="nav-link" tabindex="0">Tournaments</a>
+        <a href="social.html" class="nav-link" tabindex="0">Social</a>
+        <a href="profile.html" class="nav-link" tabindex="0">Profile</a>
+        <a href="notifications.html" class="nav-link active" aria-current="page" tabindex="0">Notifications</a>
+      </div>
+      <div class="hamburger" id="hamburger" tabindex="0" aria-label="Open navigation menu" role="button">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </nav>
+  <main class="notifications-main" aria-label="Notifications">
+    <header class="notifications-header">
+      <h1 class="notifications-title">Your Notifications</h1>
+      <span class="notifications-subtext">Stay up to date with tournament invites, matches, and social activity.</span>
+      <div class="actions-bar">
+        <button class="action-btn" id="markAllRead" aria-label="Mark all as read">Mark All as Read</button>
+        <button class="action-btn" id="clearAll" aria-label="Clear all notifications">Clear All</button>
+      </div>
+    </header>
+    <section class="notifications-list" id="notificationsList" role="list">
+      <!-- Example notification cards (replace with dynamic content) -->
+      <article class="notification-card unread" tabindex="0" role="listitem" aria-label="Tournament Invite: Valorant Masters">
+        <span class="notification-icon" aria-hidden="true">🎮</span>
+        <div class="notification-content">
+          <span class="notification-title">Tournament Invite</span>
+          <span class="notification-message">You have been invited to join Valorant Masters!</span>
+          <span class="notification-timestamp">2 hours ago</span>
+        </div>
+        <div class="notification-actions">
+          <button class="mark-btn" aria-label="Mark as read">Mark as Read</button>
+          <button class="delete-btn" aria-label="Delete notification">🗑️</button>
+        </div>
+      </article>
+      <article class="notification-card" tabindex="0" role="listitem" aria-label="Match Result: Rocket League Cup">
+        <span class="notification-icon" aria-hidden="true">🏆</span>
+        <div class="notification-content">
+          <span class="notification-title">Match Result</span>
+          <span class="notification-message">Your team won the Rocket League Cup quarterfinals!</span>
+          <span class="notification-timestamp">Yesterday</span>
+        </div>
+        <div class="notification-actions">
+          <button class="mark-btn" aria-label="Mark as unread">Mark as Unread</button>
+          <button class="delete-btn" aria-label="Delete notification">🗑️</button>
+        </div>
+      </article>
+      <article class="notification-card unread" tabindex="0" role="listitem" aria-label="Comment Reply: Post #123">
+        <span class="notification-icon" aria-hidden="true">💬</span>
+        <div class="notification-content">
+          <span class="notification-title">Comment Reply</span>
+          <span class="notification-message">Someone replied to your post: "Nice strategy!"</span>
+          <span class="notification-timestamp">5 min ago</span>
+        </div>
+        <div class="notification-actions">
+          <button class="mark-btn" aria-label="Mark as read">Mark as Read</button>
+          <button class="delete-btn" aria-label="Delete notification">🗑️</button>
+        </div>
+      </article>
+      <article class="notification-card" tabindex="0" role="listitem" aria-label="New Follower: @gamerpro">
+        <span class="notification-icon" aria-hidden="true">👤</span>
+        <div class="notification-content">
+          <span class="notification-title">New Follower</span>
+          <span class="notification-message">@gamerpro started following you.</span>
+          <span class="notification-timestamp">3 days ago</span>
+        </div>
+        <div class="notification-actions">
+          <button class="mark-btn" aria-label="Mark as unread">Mark as Unread</button>
+          <button class="delete-btn" aria-label="Delete notification">🗑️</button>
+        </div>
+      </article>
+      <!-- End example cards -->
+    </section>
+    <div class="pagination" aria-label="Pagination" style="margin:2rem auto 0; text-align:center;">
+      <button class="mark-btn" aria-label="Previous page" tabindex="0">&lt; Prev</button>
+      <span style="color:#b0b0b0; margin:0 1rem;">Page 1 of 5</span>
+      <button class="mark-btn" aria-label="Next page" tabindex="0">Next &gt;</button>
+    </div>
+  </main>
+  <script src="scripts/app.js"></script>
+  <script>
+    // Hamburger menu toggle for mobile
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.querySelector('.nav-links');
+    hamburger && hamburger.addEventListener('click', () => {
+      navLinks.classList.toggle('open');
+    });
+    // Placeholder: CRUD operations for notifications
+    // - Read notifications from backend/API
+    // - Update notification read status
+    // - Delete notifications
+    // - Navigate to related content on click
+    // - Animate new notifications
+    // - Implement pagination/infinite scroll
+    // - Keyboard navigation and ARIA support
+  </script>
+</body>
+</html>

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GameVibe Arena - Tournaments</title>
+  <link rel="stylesheet" href="styles/main.css">
+  <style>
+    :root {
+      --glass-bg: rgba(30, 34, 45, 0.75);
+      --glass-blur: 18px;
+      --gradient-main: linear-gradient(90deg, #6a82fb 0%, #fc5c7d 100%);
+      --gradient-accent: linear-gradient(90deg, #232526 0%, #6a82fb 100%);
+      --neon-blue: #6a82fb;
+      --card-radius: 24px;
+      --nav-height: 64px;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #181a20;
+      color: #fff;
+      min-height: 100vh;
+    }
+    nav.navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--nav-height);
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px #0003;
+    }
+    .nav-inner {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+    }
+    .nav-logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: var(--gradient-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      white-space: nowrap;
+    }
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+    .nav-link {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1rem;
+      transition: color 0.2s;
+      position: relative;
+      padding: 0.2rem 0.5rem;
+      border-radius: 8px;
+      display: inline-block;
+    }
+    .nav-link:focus, .nav-link:hover {
+      color: #6a82fb;
+      background: rgba(106,130,251,0.08);
+    }
+    .nav-link.active {
+      color: #6a82fb;
+      background: rgba(106,130,251,0.12);
+      outline: none;
+    }
+    .tournaments-main {
+      margin-top: calc(var(--nav-height) + 2.5rem);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+      padding-bottom: 2rem;
+      min-height: 100vh;
+      background: linear-gradient(120deg, #181a20 60%, #232526 100%);
+    }
+    .tournaments-header {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.2rem;
+    }
+    .tournaments-title {
+      font-size: 2rem;
+      font-weight: 700;
+      background: var(--gradient-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0;
+    }
+    .create-tournament-btn {
+      background: var(--gradient-main);
+      color: #fff;
+      font-weight: 700;
+      border: none;
+      border-radius: 16px;
+      padding: 0.7rem 1.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px #6a82fb33;
+      transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+      text-decoration: none;
+      outline: none;
+    }
+    .create-tournament-btn:focus, .create-tournament-btn:hover {
+      background: var(--gradient-accent);
+      transform: scale(1.06);
+      box-shadow: 0 4px 16px #fc5c7d44;
+    }
+    .filter-bar {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      background: var(--glass-bg);
+      border-radius: 1.2rem;
+      padding: 1rem 1.2rem;
+      margin-bottom: 1.2rem;
+      box-shadow: 0 2px 8px #6a82fb33;
+      flex-wrap: wrap;
+    }
+    .filter-bar label {
+      font-size: 1rem;
+      color: #b3b3b3;
+      margin-right: 0.5rem;
+    }
+    .filter-bar select, .filter-bar input[type="date"] {
+      background: #232526;
+      color: #fff;
+      border: 1px solid #6a82fb;
+      border-radius: 8px;
+      padding: 0.4rem 0.8rem;
+      font-size: 1rem;
+      margin-right: 1rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .filter-bar select:focus, .filter-bar input[type="date"]:focus {
+      border: 2px solid #fc5c7d;
+    }
+    .tournaments-grid {
+      width: 100%;
+      max-width: 1200px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+    }
+    .tournament-card {
+      background: var(--glass-bg);
+      border-radius: var(--card-radius);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.25);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      border: 1.5px solid rgba(106, 130, 251, 0.18);
+      padding: 1.5rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      position: relative;
+      transition: transform 0.18s, box-shadow 0.18s;
+    }
+    .tournament-card:hover {
+      transform: translateY(-6px) scale(1.03);
+      box-shadow: 0 8px 32px #6a82fb55;
+    }
+    .tournament-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.2rem;
+    }
+    .tournament-desc {
+      font-size: 1rem;
+      color: #b3b3b3;
+      margin-bottom: 0.2rem;
+      min-height: 2.2em;
+    }
+    .tournament-meta {
+      font-size: 0.97rem;
+      color: #6a82fb;
+      font-weight: 500;
+    }
+    .tournament-badges {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.2rem;
+    }
+    .badge {
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 0.2rem 0.7rem;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #6a82fb, #232526);
+      color: #fff;
+      box-shadow: 0 1px 4px #6a82fb33;
+      letter-spacing: 0.5px;
+      border: none;
+      outline: none;
+      transition: background 0.2s;
+    }
+    .badge.upcoming {
+      background: linear-gradient(90deg, #232526, #6a82fb);
+    }
+    .badge.active {
+      background: linear-gradient(90deg, #00ffb3, #6a82fb);
+      color: #181a20;
+    }
+    .badge.completed {
+      background: linear-gradient(90deg, #fc5c7d, #232526);
+    }
+    .tournament-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.7rem;
+    }
+    .tournament-btn {
+      background: var(--gradient-main);
+      color: #fff;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      padding: 0.5rem 1.2rem;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px #6a82fb33;
+      transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+      text-decoration: none;
+      outline: none;
+    }
+    .tournament-btn:focus, .tournament-btn:hover {
+      background: var(--gradient-accent);
+      transform: scale(1.06);
+      box-shadow: 0 4px 16px #fc5c7d44;
+    }
+    .pagination {
+      display: flex;
+      gap: 0.7rem;
+      justify-content: center;
+      align-items: center;
+      margin: 2rem 0 0 0;
+    }
+    .pagination-btn {
+      background: var(--glass-bg);
+      color: #6a82fb;
+      border: 1px solid #6a82fb;
+      border-radius: 8px;
+      padding: 0.4rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .pagination-btn:focus, .pagination-btn:hover {
+      background: #6a82fb;
+      color: #fff;
+    }
+    @media (max-width: 900px) {
+      .tournaments-header, .filter-bar, .tournaments-grid {
+        max-width: 98vw;
+      }
+      .tournaments-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+    }
+    @media (max-width: 700px) {
+      .nav-inner {
+        padding: 0 0.5rem;
+      }
+      .nav-links {
+        gap: 1rem;
+      }
+      .tournaments-main {
+        margin-top: calc(var(--nav-height) + 1.2rem);
+      }
+      .tournament-card {
+        padding: 1rem 0.5rem;
+      }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar" aria-label="Main Navigation">
+    <div class="nav-inner">
+      <span class="nav-logo">GameVibe Arena</span>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link" tabindex="0">Home</a>
+        <a href="tournaments.html" class="nav-link active" aria-current="page" tabindex="0">Tournaments</a>
+        <a href="social.html" class="nav-link" tabindex="0">Social</a>
+        <a href="profile.html" class="nav-link" tabindex="0">Profile</a>
+        <a href="notifications.html" class="nav-link" tabindex="0">Notifications</a>
+      </div>
+    </div>
+  </nav>
+  <main class="tournaments-main">
+    <header class="tournaments-header">
+      <h1 class="tournaments-title">Tournaments</h1>
+      <a href="#create-tournament" class="create-tournament-btn">Create Tournament</a>
+    </header>
+    <form class="filter-bar" aria-label="Filter Tournaments">
+      <label for="game_type">Game Type:</label>
+      <select id="game_type" name="game_type">
+        <option value="">All</option>
+        <option value="FPS">FPS</option>
+        <option value="Sports">Sports</option>
+        <option value="Battle Royale">Battle Royale</option>
+      </select>
+      <label for="status">Status:</label>
+      <select id="status" name="status">
+        <option value="">All</option>
+        <option value="upcoming">Upcoming</option>
+        <option value="active">Active</option>
+        <option value="completed">Completed</option>
+      </select>
+      <label for="start_date">Start Date:</label>
+      <input type="date" id="start_date" name="start_date">
+      <label for="end_date">End Date:</label>
+      <input type="date" id="end_date" name="end_date">
+      <button type="submit" class="tournament-btn">Filter</button>
+    </form>
+    <section class="tournaments-grid" aria-label="Tournaments List">
+      <!-- Placeholder: List tournaments from DB (CRUD: Read) -->
+      <article class="tournament-card">
+        <div class="tournament-title">Valorant Masters</div>
+        <div class="tournament-desc">The ultimate FPS tournament for Valorant pros. Compete for glory and cash!</div>
+        <div class="tournament-meta">FPS | Entry Fee: $10 | Prize: $2,000 | Max: 64 | 2025-07-20 to 2025-07-22</div>
+        <div class="tournament-badges">
+          <span class="badge active">Active</span>
+        </div>
+        <div class="tournament-actions">
+          <a href="#details" class="tournament-btn">View Details</a>
+          <button class="tournament-btn">Join</button>
+        </div>
+      </article>
+      <article class="tournament-card">
+        <div class="tournament-title">Rocket League Cup</div>
+        <div class="tournament-desc">Show off your car soccer skills in this high-flying Rocket League event.</div>
+        <div class="tournament-meta">Sports | Entry Fee: $5 | Prize: $1,000 | Max: 32 | 2025-07-25 to 2025-07-26</div>
+        <div class="tournament-badges">
+          <span class="badge upcoming">Upcoming</span>
+        </div>
+        <div class="tournament-actions">
+          <a href="#details" class="tournament-btn">View Details</a>
+          <button class="tournament-btn">Join</button>
+        </div>
+      </article>
+      <article class="tournament-card">
+        <div class="tournament-title">Apex Legends Showdown</div>
+        <div class="tournament-desc">Battle it out in the Apex arena for fame and fortune. Who will be champion?</div>
+        <div class="tournament-meta">Battle Royale | Entry Fee: $8 | Prize: $1,500 | Max: 48 | 2025-08-01 to 2025-08-03</div>
+        <div class="tournament-badges">
+          <span class="badge upcoming">Upcoming</span>
+        </div>
+        <div class="tournament-actions">
+          <a href="#details" class="tournament-btn">View Details</a>
+          <button class="tournament-btn">Join</button>
+        </div>
+      </article>
+      <article class="tournament-card">
+        <div class="tournament-title">Retro Smash</div>
+        <div class="tournament-desc">Classic games, big prizes. Relive the golden age of gaming!</div>
+        <div class="tournament-meta">Arcade | Entry Fee: $3 | Prize: $500 | Max: 16 | 2025-08-10 to 2025-08-10</div>
+        <div class="tournament-badges">
+          <span class="badge completed">Completed</span>
+        </div>
+        <div class="tournament-actions">
+          <a href="#details" class="tournament-btn">View Details</a>
+        </div>
+      </article>
+    </section>
+    <nav class="pagination" aria-label="Pagination">
+      <button class="pagination-btn">&laquo; Prev</button>
+      <span>Page 1 of 3</span>
+      <button class="pagination-btn">Next &raquo;</button>
+    </nav>
+  </main>
+</body>
+</html>
