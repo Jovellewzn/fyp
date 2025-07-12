@@ -10,13 +10,11 @@
     <nav class="navbar" aria-label="Main Navigation">
       <div class="nav-inner">
         <span class="nav-logo">GameVibe Arena</span>
-        <div class="nav-links">
-        <a href="index.html" class="nav-link active" aria-current="page" tabindex="0">Home</a>
-        <a href="tournaments.html" class="nav-link" tabindex="0">Tournaments</a>
-          <a href="social.html" class="nav-link" tabindex="0">Social</a>
-          <a href="profile.html" class="nav-link" tabindex="0">Profile</a>
-          <a href="notifications.html" class="nav-link" tabindex="0">Notifications</a>
-        </div>
+        <button class="nav-hamburger" id="navHamburger" aria-label="Open menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="nav-links" id="navLinks"></div>
+        <div class="nav-auth" id="navAuth"></div>
       </div>
     </nav>
     <main class="dashboard-main">
@@ -85,7 +83,141 @@
       &copy; 2025 GameVibe Arena. All rights reserved.
     </footer>
     <script src="scripts/app.js"></script>
+    <script>
+      // --- Navbar Auth & Responsive Logic ---
+      const navLinks = document.getElementById('navLinks');
+      const navAuth = document.getElementById('navAuth');
+      const navHamburger = document.getElementById('navHamburger');
+      // Set your nav links here for logged-in state
+      const NAV_LINKS = [
+        { href: 'index.html', label: 'Home' },
+        { href: 'tournaments.html', label: 'Tournaments' },
+        { href: 'social.html', label: 'Social' },
+        { href: 'profile.html', label: 'Profile' },
+        { href: 'notifications.html', label: 'Notifications' }
+      ];
+      // Utility: get current page filename
+      function getCurrentPage() {
+        const path = window.location.pathname;
+        return path.substring(path.lastIndexOf('/') + 1);
+      }
+      function renderNavbar() {
+        const user = JSON.parse(localStorage.getItem('user'));
+        navLinks.innerHTML = '';
+        navAuth.innerHTML = '';
+        if (user && user.username) {
+          // Logged in: show all links
+          const current = getCurrentPage();
+          NAV_LINKS.forEach(link => {
+            const a = document.createElement('a');
+            a.href = link.href;
+            a.className = 'nav-link' + (current === link.href ? ' active' : '');
+            a.setAttribute('tabindex', '0');
+            if (current === link.href) {
+              a.setAttribute('aria-current', 'page');
+            }
+            a.textContent = link.label;
+            navLinks.appendChild(a);
+          });
+          navAuth.innerHTML = `
+            <span class="nav-username">Hi, ${user.username}</span>
+            <button class="nav-btn logout-btn" id="logoutBtn">Logout</button>
+          `;
+          document.getElementById('logoutBtn').onclick = () => {
+            localStorage.removeItem('user');
+            location.reload();
+          };
+        } else {
+          // Not logged in: show only Login and Sign Up
+          navLinks.innerHTML = '';
+          navAuth.innerHTML = `
+            <button class="nav-btn login-btn" id="loginBtn">Login</button>
+            <button class="nav-btn signup-btn" id="signupBtn">Sign Up</button>
+          `;
+          document.getElementById('loginBtn').onclick = () => {
+            window.location.href = 'login.html';
+          };
+          document.getElementById('signupBtn').onclick = () => {
+            window.location.href = 'signup.html';
+          };
+        }
+      }
+      renderNavbar();
+      // Hamburger menu toggle
+      navHamburger.addEventListener('click', function() {
+        navLinks.classList.toggle('show');
+        navHamburger.setAttribute('aria-expanded', navLinks.classList.contains('show'));
+      });
+      // Close nav on link click (mobile)
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('nav-link')) {
+          navLinks.classList.remove('show');
+          navHamburger.setAttribute('aria-expanded', 'false');
+        }
+      });
+      // Keyboard accessibility for hamburger
+      navHamburger.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          navHamburger.click();
+        }
+      });
+    </script>
     <style>
+      .nav-hamburger {
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 44px;
+        height: 44px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        z-index: 201;
+        margin-left: 1rem;
+      }
+      .nav-hamburger span {
+        display: block;
+        width: 28px;
+        height: 3px;
+        margin: 4px 0;
+        background: var(--gradient-main);
+        border-radius: 2px;
+        transition: 0.3s;
+      }
+      .nav-auth {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-left: 1.5rem;
+      }
+      .nav-btn {
+        background: var(--gradient-main);
+        color: #fff;
+        font-weight: 700;
+        border: none;
+        border-radius: 16px;
+        padding: 0.5rem 1.2rem;
+        font-size: 1rem;
+        cursor: pointer;
+        box-shadow: 0 2px 8px #6a82fb33;
+        transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+        outline: none;
+        margin-left: 0.2rem;
+      }
+      .nav-btn:focus, .nav-btn:hover {
+        background: var(--gradient-accent);
+        transform: scale(1.06);
+        box-shadow: 0 4px 16px #fc5c7d44;
+      }
+      .nav-username {
+        color: #6a82fb;
+        font-weight: 700;
+        font-size: 1.08rem;
+        margin-right: 0.2rem;
+        letter-spacing: 0.2px;
+      }
       :root {
         --glass-bg: rgba(30, 34, 45, 0.75);
         --glass-blur: 18px;
@@ -136,22 +268,48 @@
         display: flex;
         gap: 2rem;
         flex-wrap: wrap;
+        align-items: center;
+        transition: right 0.3s;
+      }
+      .nav-links.show {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: var(--nav-height);
+        right: 0;
+        background: var(--glass-bg);
+        box-shadow: 0 8px 32px #6a82fb55;
+        border-radius: 0 0 0 24px;
+        width: 70vw;
+        max-width: 320px;
+        z-index: 200;
+        padding: 1.5rem 1.2rem 1.5rem 2rem;
+        gap: 1.5rem;
+        animation: fadeIn 0.2s;
+      }
+      .nav-btn.login-btn, .nav-btn.signup-btn {
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        cursor: pointer;
       }
       .nav-link {
         color: #fff;
         text-decoration: none;
         font-weight: 500;
         font-size: 1rem;
-        transition: color 0.2s;
+        transition: color 0.2s, background 0.2s;
         position: relative;
         padding: 0.2rem 0.5rem;
         border-radius: 8px;
         display: inline-block;
+        outline: none;
       }
       .nav-link.active, .nav-link:focus {
         color: #6a82fb;
         background: rgba(106,130,251,0.12);
-        outline: none;
+        outline: 2px solid #6a82fb;
+        outline-offset: 2px;
       }
       .nav-link:hover {
         color: #6a82fb;
@@ -355,19 +513,41 @@
         .dashboard-card {
           padding: 1.2rem 1rem;
         }
-      }
-      @media (max-width: 700px) {
         .nav-inner {
           padding: 0 0.5rem;
         }
         .nav-links {
           gap: 1rem;
         }
+        .nav-auth {
+          gap: 0.5rem;
+        }
+      }
+      @media (max-width: 700px) {
+        .nav-inner {
+          padding: 0 0.5rem;
+        }
+        .nav-links {
+          display: none;
+        }
+        .nav-links.show {
+          display: flex;
+        }
+        .nav-hamburger {
+          display: flex;
+        }
+        .nav-auth {
+          gap: 0.2rem;
+        }
         .dashboard-main {
           margin-top: calc(var(--nav-height) + 1.2rem);
         }
         .dashboard-card {
           padding: 1rem 0.5rem;
+        }
+        .nav-btn.login-btn, .nav-btn.signup-btn {
+          width: 100%;
+          margin: 0.2rem 0;
         }
       }
       @keyframes fadeIn {
