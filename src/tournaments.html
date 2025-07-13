@@ -230,25 +230,24 @@
       display: flex;
       gap: 1rem;
       margin-top: 0.7rem;
+      flex-wrap: wrap;
     }
     .tournament-btn {
-      background: var(--gradient-main);
+      background: linear-gradient(90deg, #6a82fb, #fc5c7d);
       color: #fff;
-      font-weight: 700;
       border: none;
       border-radius: 12px;
-      padding: 0.5rem 1.2rem;
-      font-size: 1rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 2px 8px #6a82fb33;
-      transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+      transition: background 0.2s, transform 0.15s;
       text-decoration: none;
-      outline: none;
+      display: inline-block;
     }
     .tournament-btn:focus, .tournament-btn:hover {
-      background: var(--gradient-accent);
-      transform: scale(1.06);
-      box-shadow: 0 4px 16px #fc5c7d44;
+      background: linear-gradient(90deg, #232526, #6a82fb);
+      transform: scale(1.05);
     }
     .pagination {
       display: flex;
@@ -342,7 +341,7 @@
     </form>
     <section class="tournaments-grid" aria-label="Tournaments List">
       <!-- Placeholder: List tournaments from DB (CRUD: Read) -->
-      <article class="tournament-card">
+      <article class="tournament-card" data-tournament-id="valorant-masters">
         <div class="tournament-title">Valorant Masters</div>
         <div class="tournament-desc">The ultimate FPS tournament for Valorant pros. Compete for glory and cash!</div>
         <div class="tournament-meta">FPS | Entry Fee: $10 | Prize: $2,000 | Max: 64 | 2025-07-20 to 2025-07-22</div>
@@ -350,11 +349,13 @@
           <span class="badge active">Active</span>
         </div>
         <div class="tournament-actions">
-          <a href="#details" class="tournament-btn">View Details</a>
-          <button class="tournament-btn">Join</button>
+          <a href="#details" class="tournament-btn view-details-btn">View Details</a>
+          <button class="tournament-btn join-btn">Join</button>
+          <button class="tournament-btn view-match-results-btn" data-tournament-id="valorant-masters">Match Results</button>
+          <button class="tournament-btn view-discussions-btn" data-tournament-id="valorant-masters">Discussions</button>
         </div>
       </article>
-      <article class="tournament-card">
+      <article class="tournament-card" data-tournament-id="rocket-league-cup">
         <div class="tournament-title">Rocket League Cup</div>
         <div class="tournament-desc">Show off your car soccer skills in this high-flying Rocket League event.</div>
         <div class="tournament-meta">Sports | Entry Fee: $5 | Prize: $1,000 | Max: 32 | 2025-07-25 to 2025-07-26</div>
@@ -362,11 +363,13 @@
           <span class="badge upcoming">Upcoming</span>
         </div>
         <div class="tournament-actions">
-          <a href="#details" class="tournament-btn">View Details</a>
-          <button class="tournament-btn">Join</button>
+          <a href="#details" class="tournament-btn view-details-btn">View Details</a>
+          <button class="tournament-btn join-btn">Join</button>
+          <button class="tournament-btn view-match-results-btn" data-tournament-id="rocket-league-cup">Match Results</button>
+          <button class="tournament-btn view-discussions-btn" data-tournament-id="rocket-league-cup">Discussions</button>
         </div>
       </article>
-      <article class="tournament-card">
+      <article class="tournament-card" data-tournament-id="apex-legends-showdown">
         <div class="tournament-title">Apex Legends Showdown</div>
         <div class="tournament-desc">Battle it out in the Apex arena for fame and fortune. Who will be champion?</div>
         <div class="tournament-meta">Battle Royale | Entry Fee: $8 | Prize: $1,500 | Max: 48 | 2025-08-01 to 2025-08-03</div>
@@ -374,11 +377,13 @@
           <span class="badge upcoming">Upcoming</span>
         </div>
         <div class="tournament-actions">
-          <a href="#details" class="tournament-btn">View Details</a>
-          <button class="tournament-btn">Join</button>
+          <a href="#details" class="tournament-btn view-details-btn">View Details</a>
+          <button class="tournament-btn join-btn">Join</button>
+          <button class="tournament-btn view-match-results-btn" data-tournament-id="apex-legends-showdown">Match Results</button>
+          <button class="tournament-btn view-discussions-btn" data-tournament-id="apex-legends-showdown">Discussions</button>
         </div>
       </article>
-      <article class="tournament-card">
+      <article class="tournament-card" data-tournament-id="retro-smash">
         <div class="tournament-title">Retro Smash</div>
         <div class="tournament-desc">Classic games, big prizes. Relive the golden age of gaming!</div>
         <div class="tournament-meta">Arcade | Entry Fee: $3 | Prize: $500 | Max: 16 | 2025-08-10 to 2025-08-10</div>
@@ -386,7 +391,9 @@
           <span class="badge completed">Completed</span>
         </div>
         <div class="tournament-actions">
-          <a href="#details" class="tournament-btn">View Details</a>
+          <a href="#details" class="tournament-btn view-details-btn">View Details</a>
+          <button class="tournament-btn view-match-results-btn" data-tournament-id="retro-smash">Match Results</button>
+          <button class="tournament-btn view-discussions-btn" data-tournament-id="retro-smash">Discussions</button>
         </div>
       </article>
     </section>
@@ -396,5 +403,6 @@
       <button class="pagination-btn">Next &raquo;</button>
     </nav>
   </main>
+  <script src="scripts/app.js"></script>
 </body>
 </html>

@@ -335,6 +335,275 @@
       color: #fff;
       font-size: 1rem;
     }
+
+    /* User Connections Styles */
+    .connections-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .connections-tab-btn {
+      background: rgba(106, 130, 251, 0.1);
+      border: 1px solid rgba(106, 130, 251, 0.3);
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+
+    .connections-tab-btn:hover,
+    .connections-tab-btn.active {
+      background: var(--gradient-main);
+      border-color: transparent;
+      color: #fff;
+    }
+
+    .connections-content {
+      animation: fadeIn 0.5s ease;
+    }
+
+    .user-avatar-small {
+      width: 40px;
+      height: 40px;
+      background: var(--gradient-main);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-right: 1rem;
+    }
+
+    .connection-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .btn-small {
+      padding: 0.4rem 0.8rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-success {
+      background: linear-gradient(45deg, #2ecc71, #27ae60);
+      color: #fff;
+    }
+
+    .btn-success:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+    }
+
+    .btn-danger {
+      background: linear-gradient(45deg, #e74c3c, #c0392b);
+      color: #fff;
+    }
+
+    .btn-danger:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+    }
+
+    .btn-secondary {
+      background: rgba(149, 165, 166, 0.3);
+      color: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(149, 165, 166, 0.2);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(149, 165, 166, 0.4);
+      color: #fff;
+    }
+
+    .btn-secondary:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .no-connections {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.6);
+      padding: 2rem;
+      font-style: italic;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur));
+      border-radius: var(--card-radius);
+      border: 1.5px solid rgba(255, 255, 255, 0.10);
+      padding: 2rem;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.25);
+    }
+
+    .modal-content.large {
+      max-width: 800px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      color: #fff;
+      font-size: 1.5rem;
+      background: var(--gradient-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .close-modal {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 50%;
+      transition: background-color 0.3s;
+    }
+
+    .close-modal:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .discover-users-list {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .user-discover-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s;
+    }
+
+    .user-discover-item:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(106, 130, 251, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex: 1;
+    }
+
+    .user-avatar {
+      width: 50px;
+      height: 50px;
+      background: var(--gradient-main);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      font-size: 1.25rem;
+      text-transform: uppercase;
+    }
+
+    .user-details {
+      flex: 1;
+    }
+
+    .user-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.25rem;
+    }
+
+    .user-email {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 0.25rem;
+    }
+
+    .user-bio {
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.6);
+      font-style: italic;
+    }
+
+    .user-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .btn-primary {
+      background: var(--gradient-main);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(106, 130, 251, 0.3);
+    }
+
+    .no-users {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.6);
+      padding: 3rem 2rem;
+      font-style: italic;
+      font-size: 1.1rem;
+    }
     @media (max-width: 700px) {
       .nav-inner {
         padding: 0 0.5rem;
@@ -391,11 +660,10 @@
         <div class="profile-info">
           <h1 class="profile-username">GamerTag123</h1>
           <p class="profile-bio">Competitive gamer. FPS enthusiast. Always up for a challenge!</p>
-          <div class="profile-lastlogin">Last login: 2025-07-10 21:45</div>
+          <div class="profile-lastlogin">Last login: 2025-07-12 14:30</div>
         </div>
       </div>
       <div class="profile-actions">
-        <button class="btn follow" tabindex="0">Follow</button>
         <button class="btn message" tabindex="0">Message</button>
         <button class="btn edit" tabindex="0">Edit Profile</button>
       </div>
@@ -440,24 +708,34 @@
         </ul>
       </section>
       <section class="tab-content" id="tab-friends" style="display:none" aria-label="Friends and Followers">
-        <ul class="insta-list">
-          <li class="insta-card">
-            <img src="https://randomuser.me/api/portraits/men/45.jpg" alt="Friend Avatar" class="insta-thumb">
-            <div class="insta-content">
-              <span class="insta-title">PlayerOne</span>
-              <span class="insta-meta">Friend · Online</span>
-            </div>
-            <span class="insta-action">Message</span>
-          </li>
-          <li class="insta-card">
-            <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="Follower Avatar" class="insta-thumb">
-            <div class="insta-content">
-              <span class="insta-title">GameFanatic</span>
-              <span class="insta-meta">Follower · Last active 2h ago</span>
-            </div>
-            <span class="insta-action">Follow Back</span>
-          </li>
-        </ul>
+        <!-- Connection tabs -->
+        <div class="connections-tabs">
+          <button class="connections-tab-btn active" data-tab="followers">Followers</button>
+          <button class="connections-tab-btn" data-tab="following">Following</button>
+          <button class="connections-tab-btn" data-tab="pending">Pending</button>
+          <button class="discover-users-btn connections-tab-btn">Discover Users</button>
+        </div>
+        
+        <!-- Followers content -->
+        <div id="followers-content" class="connections-content">
+          <ul class="insta-list" id="followers-list">
+            <!-- Content will be dynamically loaded -->
+          </ul>
+        </div>
+        
+        <!-- Following content -->
+        <div id="following-content" class="connections-content" style="display:none">
+          <ul class="insta-list" id="following-list">
+            <!-- Content will be dynamically loaded -->
+          </ul>
+        </div>
+        
+        <!-- Pending content -->
+        <div id="pending-content" class="connections-content" style="display:none">
+          <ul class="insta-list" id="pending-list">
+            <!-- Content will be dynamically loaded -->
+          </ul>
+        </div>
       </section>
       <section class="tab-content" id="tab-posts" style="display:none" aria-label="Recent Posts">
         <ul class="insta-list">
@@ -485,6 +763,7 @@
       </div>
     </section>
   </main>
+  <script src="scripts/app.js"></script>
   <script>
     // Tab switching logic, keyboard accessible
     const tabBtns = document.querySelectorAll('.tab-btn');
@@ -498,6 +777,11 @@
         tabBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         tabContents.forEach((c, i) => c.style.display = i === idx ? '' : 'none');
+        
+        // If switching to friends tab, show followers by default
+        if (idx === 1 && window.userConnectionsCRUD) {
+          window.userConnectionsCRUD.switchConnectionsTab('followers');
+        }
       });
       btn.addEventListener('keydown', e => {
         if (e.key === 'Enter' || e.key === ' ') btn.click();
