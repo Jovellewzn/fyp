@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Login Test</title>
+</head>
+<body>
+    <h1>Debug Login Test</h1>
+    <form id="loginForm">
+        <div>
+            <label>Username: <input type="text" id="username" value="testuser" required></label>
+        </div>
+        <div>
+            <label>Password: <input type="password" id="password" value="testpass" required></label>
+        </div>
+        <button type="submit">Login</button>
+    </form>
+    
+    <div id="debug-info">
+        <h2>Debug Information:</h2>
+        <div id="debug-output"></div>
+    </div>
+
+    <script>
+        const debugOutput = document.getElementById('debug-output');
+        
+        function log(message) {
+            debugOutput.innerHTML += '<p>' + new Date().toLocaleTimeString() + ': ' + message + '</p>';
+            console.log(message);
+        }
+        
+        // Test server connection first
+        log('Testing server connection...');
+        fetch('/api/test')
+            .then(response => {
+                log('Server response status: ' + response.status);
+                return response.text();
+            })
+            .then(data => {
+                log('Server response: ' + data);
+            })
+            .catch(error => {
+                log('❌ Server connection failed: ' + error.message);
+                log('Make sure server is running on http://localhost:3000');
+            });
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            log('Attempting login for user: ' + username);
+            
+            try {
+                log('Sending POST request to /login...');
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                log('Response status: ' + response.status);
+                log('Response headers: ' + JSON.stringify([...response.headers.entries()]));
+                
+                const result = await response.json();
+                log('Response body: ' + JSON.stringify(result));
+                
+                if (response.ok) {
+                    log('✅ Login successful!');
+                    alert('Login successful! Check debug info for details.');
+                } else {
+                    log('❌ Login failed: ' + (result.error || 'Unknown error'));
+                    alert('Login failed: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                log('❌ Network error: ' + error.message);
+                log('❌ Make sure the server is running!');
+                alert('Network error: ' + error.message + '\n\nMake sure the server is running on http://localhost:3000');
+            }
+        });
+    </script>
+</body>
+</html>

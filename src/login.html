@@ -210,8 +210,8 @@
       <div class="login-title">Sign In to GameVibe Arena</div>
       <div class="login-form">
         <div class="form-group">
-          <label for="email" class="form-label">Email</label>
-          <input type="email" id="email" class="form-input" name="email" required autocomplete="email" placeholder="you@example.com">
+          <label for="username" class="form-label">Username</label>
+          <input type="text" id="username" class="form-input" name="username" required autocomplete="username" placeholder="Your username">
         </div>
         <div class="form-group">
           <label for="password" class="form-label">Password</label>
@@ -229,12 +229,41 @@
     </form>
   </div>
   <script>
-    document.querySelector('.login-card').addEventListener('submit', function(e) {
+    document.querySelector('.login-card').addEventListener('submit', async function(e) {
       e.preventDefault();
-      const email = document.getElementById('email').value;
-      // For demo, use email as username
-      localStorage.setItem('user', JSON.stringify({ username: email.split('@')[0], email }));
-      window.location.href = 'index.html';
+      
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      
+      if (!username || !password) {
+        alert('Please fill in all fields.');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ username, password })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          // Login successful, redirect to profile or dashboard
+          alert('Login successful!');
+          window.location.href = 'profile.html';
+        } else {
+          // Show error message
+          alert(result.error || 'Login failed. Please try again.');
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        alert('Network error. Please check your connection and try again.');
+      }
     });
   </script>
 </body>

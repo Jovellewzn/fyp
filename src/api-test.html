@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>API Test</h1>
+    <button onclick="testPosts()">Test Posts</button>
+    <button onclick="testComments()">Test Comments for Each Post</button>
+    <div id="results"></div>
+
+    <script>
+        async function testPosts() {
+            try {
+                const response = await fetch('/api/posts');
+                const posts = await response.json();
+                
+                const results = document.getElementById('results');
+                results.innerHTML = '<h2>Posts:</h2>';
+                
+                posts.forEach(post => {
+                    results.innerHTML += `
+                        <div style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
+                            <strong>Post ID: ${post.id}</strong><br>
+                            User: ${post.username} (User ID: ${post.user_id})<br>
+                            Content: ${post.content}<br>
+                            Comments Count: ${post.comments_count}<br>
+                            Created: ${post.created_at}<br>
+                            <button onclick="testCommentsForPost(${post.id})">Check Comments</button>
+                            <div id="comments-${post.id}"></div>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('results').innerHTML = '<p>Error: ' + error.message + '</p>';
+            }
+        }
+        
+        async function testCommentsForPost(postId) {
+            try {
+                const response = await fetch(`/api/posts/${postId}/comments`);
+                const comments = await response.json();
+                
+                const commentsDiv = document.getElementById(`comments-${postId}`);
+                commentsDiv.innerHTML = `<h4>Comments for Post ${postId}:</h4>`;
+                
+                if (comments.length === 0) {
+                    commentsDiv.innerHTML += '<p>No comments</p>';
+                } else {
+                    comments.forEach(comment => {
+                        commentsDiv.innerHTML += `
+                            <div style="background: #f5f5f5; margin: 5px; padding: 5px;">
+                                Comment ID: ${comment.id}<br>
+                                Post ID: ${comment.post_id}<br>
+                                User: ${comment.username} (User ID: ${comment.user_id})<br>
+                                Content: ${comment.content}<br>
+                                Created: ${comment.created_at}
+                            </div>
+                        `;
+                    });
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById(`comments-${postId}`).innerHTML = '<p>Error: ' + error.message + '</p>';
+            }
+        }
+        
+        async function testComments() {
+            try {
+                // First get all posts
+                const postsResponse = await fetch('/api/posts');
+                const posts = await postsResponse.json();
+                
+                const results = document.getElementById('results');
+                results.innerHTML = '<h2>Comments Test:</h2>';
+                
+                for (const post of posts) {
+                    await testCommentsForPost(post.id);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('results').innerHTML = '<p>Error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,1827 +1,1467 @@
-// Main JS for GameVibe Arena
-console.log('GameVibe Arena loaded');
+// Express server for GameVibe Arena
+const express = require('express');
+const path = require('path');
+const sqlite3 = require('sqlite3').verbose();
+const bcrypt = require('bcryptjs');
+const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
+const multer = require('multer');
+const fs = require('fs');
 
-// Tournament Participants CRUD System
-class TournamentParticipantsCRUD {
-    constructor() {
-        this.participants = new Map(); // Store participants by tournament ID
-        this.currentTournamentId = null;
-        this.init();
-    }
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-    init() {
-        // Load initial data and set up event listeners
-        this.setupEventListeners();
-        this.loadSampleData();
-    }
-
-    setupEventListeners() {
-        // Add event listeners for View Details buttons
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('view-details-btn') || 
-                (e.target.closest('.tournament-btn') && e.target.textContent === 'View Details')) {
-                e.preventDefault();
-                const tournamentCard = e.target.closest('.tournament-card');
-                const tournamentId = tournamentCard.dataset.tournamentId || 
-                    this.getTournamentIdFromCard(tournamentCard);
-                this.showParticipantsModal(tournamentId);
-            }
-
-            // Join tournament button
-            if (e.target.classList.contains('join-btn') || 
-                (e.target.textContent === 'Join' && e.target.classList.contains('tournament-btn'))) {
-                e.preventDefault();
-                const tournamentCard = e.target.closest('.tournament-card');
-                const tournamentId = tournamentCard.dataset.tournamentId || 
-                    this.getTournamentIdFromCard(tournamentCard);
-                this.showJoinModal(tournamentId);
-            }
-
-            // Close modal
-            if (e.target.classList.contains('close-modal') || e.target.classList.contains('modal-overlay')) {
-                this.closeModal();
-            }
-
-            // Edit participant
-            if (e.target.classList.contains('edit-participant-btn')) {
-                const participantId = e.target.dataset.participantId;
-                this.editParticipant(participantId);
-            }
-
-            // Delete participant
-            if (e.target.classList.contains('delete-participant-btn')) {
-                const participantId = e.target.dataset.participantId;
-                this.deleteParticipant(participantId);
-            }
-        });
-
-        // Form submissions
-        document.addEventListener('submit', (e) => {
-            if (e.target.id === 'join-tournament-form') {
-                e.preventDefault();
-                this.handleJoinTournament(e.target);
-            }
-
-            if (e.target.id === 'edit-participant-form') {
-                e.preventDefault();
-                this.handleEditParticipant(e.target);
-            }
-        });
-    }
-
-    getTournamentIdFromCard(card) {
-        // Extract tournament ID from card title or create a unique ID
-        const title = card.querySelector('.tournament-title').textContent.trim();
-        return title.toLowerCase().replace(/\s+/g, '-');
-    }
-
-    // CREATE: Join tournament
-    joinTournament(tournamentId, userData) {
-        if (!this.participants.has(tournamentId)) {
-            this.participants.set(tournamentId, []);
-        }
-
-        const participants = this.participants.get(tournamentId);
-        
-        // Check if user already joined
-        const existingParticipant = participants.find(p => p.username === userData.username);
-        if (existingParticipant) {
-            alert('You have already joined this tournament!');
-            return false;
-        }
-
-        const newParticipant = {
-            id: Date.now().toString(),
-            tournamentId: tournamentId,
-            username: userData.username,
-            teamName: userData.teamName || '',
-            registrationDate: new Date().toISOString(),
-            status: 'registered'
-        };
-
-        participants.push(newParticipant);
-        this.participants.set(tournamentId, participants);
-        
-        console.log('Participant added:', newParticipant);
-        return true;
-    }
-
-    // READ: Get participants for a tournament
-    getParticipants(tournamentId) {
-        return this.participants.get(tournamentId) || [];
-    }
-
-    // UPDATE: Edit participant
-    updateParticipant(participantId, updateData) {
-        for (let [tournamentId, participants] of this.participants) {
-            const participantIndex = participants.findIndex(p => p.id === participantId);
-            if (participantIndex !== -1) {
-                participants[participantIndex] = { ...participants[participantIndex], ...updateData };
-                this.participants.set(tournamentId, participants);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // DELETE: Remove participant
-    removeParticipant(participantId) {
-        for (let [tournamentId, participants] of this.participants) {
-            const participantIndex = participants.findIndex(p => p.id === participantId);
-            if (participantIndex !== -1) {
-                participants.splice(participantIndex, 1);
-                this.participants.set(tournamentId, participants);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    showJoinModal(tournamentId) {
-        this.currentTournamentId = tournamentId;
-        const modal = this.createJoinModal();
-        document.body.appendChild(modal);
-    }
-
-    showParticipantsModal(tournamentId) {
-        this.currentTournamentId = tournamentId;
-        const participants = this.getParticipants(tournamentId);
-        const modal = this.createParticipantsModal(participants);
-        document.body.appendChild(modal);
-    }
-
-    createJoinModal() {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Join Tournament</h2>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <form id="join-tournament-form" class="join-form">
-                    <div class="form-group">
-                        <label for="username">Username:</label>
-                        <input type="text" id="username" name="username" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="team-name">Team Name (Optional):</label>
-                        <input type="text" id="team-name" name="teamName" placeholder="Enter your team name">
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" class="btn-secondary close-modal">Cancel</button>
-                        <button type="submit" class="btn-primary">Join Tournament</button>
-                    </div>
-                </form>
-            </div>
-        `;
-        return modal;
-    }
-
-    createParticipantsModal(participants) {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        
-        const participantsList = participants.map(participant => `
-            <div class="participant-item">
-                <div class="participant-info">
-                    <span class="participant-username">${participant.username}</span>
-                    <span class="participant-team">${participant.teamName || 'No team'}</span>
-                    <span class="participant-status">${participant.status}</span>
-                    <span class="participant-date">${new Date(participant.registrationDate).toLocaleDateString()}</span>
-                </div>
-                <div class="participant-actions">
-                    <button class="btn-edit edit-participant-btn" data-participant-id="${participant.id}">Edit</button>
-                    <button class="btn-delete delete-participant-btn" data-participant-id="${participant.id}">Remove</button>
-                </div>
-            </div>
-        `).join('');
-
-        modal.innerHTML = `
-            <div class="modal-content large">
-                <div class="modal-header">
-                    <h2>Tournament Participants (${participants.length})</h2>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <div class="participants-list">
-                    ${participants.length > 0 ? participantsList : '<p class="no-participants">No participants yet.</p>'}
-                </div>
-            </div>
-        `;
-        return modal;
-    }
-
-    createEditModal(participant) {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Edit Participant</h2>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <form id="edit-participant-form" class="edit-form">
-                    <input type="hidden" name="participantId" value="${participant.id}">
-                    <div class="form-group">
-                        <label for="edit-username">Username:</label>
-                        <input type="text" id="edit-username" name="username" value="${participant.username}" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-team-name">Team Name:</label>
-                        <input type="text" id="edit-team-name" name="teamName" value="${participant.teamName || ''}" placeholder="Enter team name">
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" class="btn-secondary close-modal">Cancel</button>
-                        <button type="submit" class="btn-primary">Update</button>
-                    </div>
-                </form>
-            </div>
-        `;
-        return modal;
-    }
-
-    handleJoinTournament(form) {
-        const formData = new FormData(form);
-        const userData = {
-            username: formData.get('username'),
-            teamName: formData.get('teamName')
-        };
-
-        const success = this.joinTournament(this.currentTournamentId, userData);
-        if (success) {
-            alert('Successfully joined the tournament!');
-            this.closeModal();
-        }
-    }
-
-    handleEditParticipant(form) {
-        const formData = new FormData(form);
-        const participantId = formData.get('participantId');
-        const updateData = {
-            username: formData.get('username'),
-            teamName: formData.get('teamName')
-        };
-
-        const success = this.updateParticipant(participantId, updateData);
-        if (success) {
-            alert('Participant updated successfully!');
-            this.closeModal();
-            // Refresh the participants modal
-            this.showParticipantsModal(this.currentTournamentId);
-        }
-    }
-
-    editParticipant(participantId) {
-        // Find the participant
-        let participant = null;
-        for (let [tournamentId, participants] of this.participants) {
-            participant = participants.find(p => p.id === participantId);
-            if (participant) break;
-        }
-
-        if (participant) {
-            this.closeModal();
-            const editModal = this.createEditModal(participant);
-            document.body.appendChild(editModal);
-        }
-    }
-
-    deleteParticipant(participantId) {
-        if (confirm('Are you sure you want to remove this participant?')) {
-            const success = this.removeParticipant(participantId);
-            if (success) {
-                alert('Participant removed successfully!');
-                // Refresh the participants modal
-                this.showParticipantsModal(this.currentTournamentId);
-            }
-        }
-    }
-
-    closeModal() {
-        const modal = document.querySelector('.modal-overlay');
-        if (modal) {
-            modal.remove();
-        }
-    }
-
-    loadSampleData() {
-        // Load some sample participants for demonstration
-        this.joinTournament('valorant-masters', { username: 'ProGamer123', teamName: 'Elite Squad' });
-        this.joinTournament('valorant-masters', { username: 'SniperKing', teamName: 'Shadow Ops' });
-        this.joinTournament('rocket-league-cup', { username: 'RocketMan', teamName: 'Flying Cars' });
-    }
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// User Connections CRUD System
-class UserConnectionsCRUD {
-    constructor() {
-        this.connections = new Map(); // Store connections by user ID
-        this.users = new Map(); // Store all users
-        this.currentUserId = 1; // Mock current user ID
-        this.init();
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    // Generate unique filename
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Check if the file is an image
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
     }
+  }
+});
 
-    init() {
-        this.setupEventListeners();
-        this.loadSampleData();
-        this.updateConnectionsUI();
+// Middleware for parsing JSON and urlencoded form data
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// Debug middleware - log all API requests
+app.use('/api', (req, res, next) => {
+  console.log(`\n=== API REQUEST DEBUG ===`);
+  console.log(`${req.method} ${req.url}`);
+  console.log(`Original URL: ${req.originalUrl}`);
+  console.log(`Base URL: ${req.baseUrl}`);
+  console.log(`Path: ${req.path}`);
+  console.log(`Full URL: ${req.protocol}://${req.get('host')}${req.originalUrl}`);
+  console.log(`========================\n`);
+  next();
+});
+
+// ================================
+// API ROUTES (MUST COME FIRST!)
+// ================================
+
+// Test endpoint for debugging
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    status: 'Server is running!', 
+    timestamp: new Date().toISOString(),
+    path: req.path,
+    method: req.method,
+    port: PORT 
+  });
+});
+
+// SIMPLE PUT TEST - to verify PUT method works
+app.put('/api/simple-test', (req, res) => {
+  console.log('SIMPLE PUT TEST ROUTE HIT');
+  res.json({ 
+    message: 'PUT method is working!',
+    timestamp: new Date().toISOString(),
+    body: req.body
+  });
+});
+
+// Test comment endpoint
+app.get('/api/test-comment', (req, res) => {
+  res.json({ 
+    message: 'Comment endpoints are accessible',
+    endpoints: [
+      'PUT /api/comments/:commentId',
+      'DELETE /api/comments/:commentId'
+    ]
+  });
+});
+
+// Test specific comment route
+app.get('/api/comments/test', (req, res) => {
+  res.json({ 
+    message: 'Comment routes are working',
+    method: 'GET',
+    path: '/api/comments/test'
+  });
+});
+
+// Test specific comment ID endpoint - MOVED TO TOP FOR PRIORITY
+app.get('/api/comments/:commentId/test', (req, res) => {
+  res.json({ 
+    message: 'Comment ID route is working',
+    commentId: req.params.commentId,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Test specific comment route with ID
+app.get('/api/comments/:id/test', (req, res) => {
+  res.json({ 
+    message: 'Comment ID route is working',
+    method: 'GET',
+    path: `/api/comments/${req.params.id}/test`,
+    commentId: req.params.id
+  });
+});
+
+// Test PUT method on comments
+app.put('/api/comments/:id/test', (req, res) => {
+  res.json({ 
+    message: 'PUT method works on comments route',
+    method: 'PUT',
+    commentId: req.params.id,
+    body: req.body
+  });
+});
+
+// Test DELETE method on comments  
+app.delete('/api/comments/:id/test', (req, res) => {
+  res.json({ 
+    message: 'DELETE method works on comments route',
+    method: 'DELETE',
+    commentId: req.params.id
+  });
+});
+
+// Test GET comment by ID to verify route pattern
+app.get('/api/comments/:commentId', (req, res) => {
+  res.json({ 
+    message: 'GET comment route is working',
+    method: 'GET',
+    commentId: req.params.commentId,
+    note: 'This proves the route pattern works'
+  });
+});
+
+// Update a comment - MOVED HERE FOR PRIORITY
+app.put('/api/comments/:commentId', (req, res) => {
+  console.log('=== PUT /api/comments/:commentId ROUTE HIT (MOVED VERSION) ===');
+  console.log('Comment ID:', req.params.commentId);
+  console.log('Request body:', req.body);
+  console.log('Cookies:', req.cookies);
+  console.log('URL:', req.url);
+  console.log('Method:', req.method);
+  
+  if (!isAuthenticated(req)) {
+    console.log('Authentication failed - no user_id cookie');
+    return res.status(401).json({ error: 'Not authenticated.' });
+  }
+  
+  const commentId = req.params.commentId;
+  const { content } = req.body;
+  const userId = req.cookies.user_id;
+  
+  console.log('Authenticated user ID:', userId);
+  console.log('Content to update:', content);
+  
+  if (!content || content.trim().length === 0) {
+    console.log('Content validation failed');
+    return res.status(400).json({ error: 'Comment content is required.' });
+  }
+  
+  const db = new sqlite3.Database(path.join(__dirname, '../../tournament_app.db'));
+  
+  console.log('Database connected, checking comment ownership...');
+  
+  // First verify that the user owns this comment
+  db.get('SELECT user_id FROM comments WHERE id = ?', [commentId], (err, comment) => {
+    if (err) {
+      console.error('Database error while fetching comment:', err);
+      db.close();
+      return res.status(500).json({ error: 'Database error.' });
     }
-
-    setupEventListeners() {
-        document.addEventListener('click', (e) => {
-            // Follow/Unfollow buttons
-            if (e.target.classList.contains('follow-user-btn')) {
-                const userId = parseInt(e.target.dataset.userId);
-                this.followUser(userId);
-            }
-
-            if (e.target.classList.contains('unfollow-user-btn')) {
-                const userId = parseInt(e.target.dataset.userId);
-                this.unfollowUser(userId);
-            }
-
-            // Connection status updates
-            if (e.target.classList.contains('accept-request-btn')) {
-                const connectionId = e.target.dataset.connectionId;
-                this.updateConnectionStatus(connectionId, 'accepted');
-            }
-
-            if (e.target.classList.contains('reject-request-btn')) {
-                const connectionId = e.target.dataset.connectionId;
-                this.updateConnectionStatus(connectionId, 'blocked');
-            }
-
-            // Remove connections
-            if (e.target.classList.contains('remove-connection-btn')) {
-                const connectionId = e.target.dataset.connectionId;
-                this.removeConnection(connectionId);
-            }
-
-            // Show discover users modal
-            if (e.target.classList.contains('discover-users-btn')) {
-                e.preventDefault();
-                this.showDiscoverUsersModal();
-            }
-
-            // Close modal
-            if (e.target.classList.contains('close-modal') || e.target.classList.contains('modal-overlay')) {
-                this.closeModal();
-            }
-
-            // Tab switching for connections
-            if (e.target.classList.contains('connections-tab-btn')) {
-                this.switchConnectionsTab(e.target.dataset.tab);
-            }
-        });
+    
+    console.log('Comment query result:', comment);
+    
+    if (!comment) {
+      console.log('Comment not found in database');
+      db.close();
+      return res.status(404).json({ error: 'Comment not found.' });
     }
+    
+    console.log('Comment owner:', comment.user_id, 'Current user:', userId);
+    
+    if (comment.user_id != userId) {
+      console.log('Permission denied - user does not own comment');
+      db.close();
+      return res.status(403).json({ error: 'You can only edit your own comments.' });
+    }
+    
+    console.log('Updating comment...');
+    
+    // Update the comment with current timestamp for edited_at
+    const updateQuery = 'UPDATE comments SET content = ?, edited_at = datetime(\'now\') WHERE id = ?';
+    db.run(updateQuery, [content.trim(), commentId], function(err) {
+      db.close();
+      if (err) {
+        console.error('Comment update error:', err);
+        return res.status(500).json({ error: 'Failed to update comment.' });
+      }
+      
+      console.log('Comment updated successfully');
+      res.json({ success: true, message: 'Comment updated successfully.', edited: true });
+    });
+  });
+});
 
-    // CREATE: Follow a user
-    followUser(targetUserId) {
-        if (targetUserId === this.currentUserId) {
-            alert("You can't follow yourself!");
-            return false;
+// Delete a comment - MOVED HERE FOR PRIORITY
+app.delete('/api/comments/:commentId', (req, res) => {
+  console.log('=== DELETE /api/comments/:commentId ROUTE HIT (MOVED VERSION) ===');
+  console.log('Comment ID:', req.params.commentId);
+  console.log('Cookies:', req.cookies);
+  console.log('URL:', req.url);
+  console.log('Method:', req.method);
+  
+  if (!isAuthenticated(req)) {
+    console.log('Authentication failed - no user_id cookie');
+    return res.status(401).json({ error: 'Not authenticated.' });
+  }
+  
+  const commentId = req.params.commentId;
+  const userId = req.cookies.user_id;
+  
+  console.log('Authenticated user ID:', userId);
+  
+  const db = new sqlite3.Database(path.join(__dirname, '../../tournament_app.db'));
+  
+  console.log('Database connected, checking permissions...');
+  
+  // Get comment and post info to check permissions
+  db.get(`
+    SELECT c.user_id as comment_user_id, c.post_id, p.user_id as post_user_id
+    FROM comments c
+    JOIN social_posts p ON c.post_id = p.id
+    WHERE c.id = ?
+  `, [commentId], (err, result) => {
+    if (err) {
+      console.error('Database error while fetching comment and post info:', err);
+      db.close();
+      return res.status(500).json({ error: 'Database error.' });
+    }
+    
+    console.log('Permission query result:', result);
+    
+    if (!result) {
+      console.log('Comment not found in database');
+      db.close();
+      return res.status(404).json({ error: 'Comment not found.' });
+    }
+    
+    // Check if user can delete: either comment owner or post owner
+    const canDelete = result.comment_user_id == userId || result.post_user_id == userId;
+    
+    console.log('Comment owner:', result.comment_user_id);
+    console.log('Post owner:', result.post_user_id);
+    console.log('Current user:', userId);
+    console.log('Can delete:', canDelete);
+    
+    if (!canDelete) {
+      console.log('Permission denied');
+      db.close();
+      return res.status(403).json({ error: 'You can only delete your own comments or comments on your posts.' });
+    }
+    
+    console.log('Deleting comment...');
+    
+    // Delete the comment
+    db.run('DELETE FROM comments WHERE id = ?', [commentId], function(err) {
+      if (err) {
+        db.close();
+        console.error('Comment deletion error:', err);
+        return res.status(500).json({ error: 'Failed to delete comment.' });
+      }
+      
+      console.log('Comment deleted, updating counts...');
+      
+      // Get actual comment count and update it
+      db.get('SELECT COUNT(*) as comment_count FROM comments WHERE post_id = ?', [result.post_id], (countErr, countResult) => {
+        if (countErr) {
+          console.error('Failed to get comment count:', countErr);
+        } else {
+          // Update post's comment count with actual count
+          db.run('UPDATE social_posts SET comments_count = ? WHERE id = ?', [countResult.comment_count, result.post_id], (updateErr) => {
+            if (updateErr) {
+              console.error('Failed to update comment count:', updateErr);
+            }
+          });
         }
-
-        // Check if connection already exists
-        const existingConnection = this.findConnection(this.currentUserId, targetUserId);
-        if (existingConnection) {
-            alert('Connection already exists!');
-            return false;
-        }
-
-        const newConnection = {
-            id: Date.now().toString(),
-            follower_id: this.currentUserId,
-            following_id: targetUserId,
-            connection_type: 'pending',
-            created_at: new Date().toISOString()
-        };
-
-        if (!this.connections.has(this.currentUserId)) {
-            this.connections.set(this.currentUserId, []);
-        }
-
-        this.connections.get(this.currentUserId).push(newConnection);
         
-        alert('Follow request sent!');
-        this.updateConnectionsUI();
-        this.refreshDiscoverModal();
-        return true;
+        db.close();
+        console.log('Comment deletion completed successfully');
+        res.json({ 
+          success: true, 
+          message: 'Comment deleted successfully.',
+          comments_count: countResult ? countResult.comment_count : null
+        });
+      });
+    });
+  });
+});
+
+// Default route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../src/index.html'));
+});
+
+// Signup endpoint
+app.post('/signup', async (req, res) => {
+  const { username, email, password, confirmPassword } = req.body;
+  // Basic validation
+  if (!username || !email || !password || !confirmPassword) {
+    return res.status(400).json({ error: 'All fields are required.' });
+  }
+  if (password !== confirmPassword) {
+    return res.status(400).json({ error: 'Passwords do not match.' });
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+  }
+
+  // Connect to DB
+  const db = new sqlite3.Database(path.join(__dirname, '../../tournament_app.db'));
+
+  console.log('Database path used for signup and login:', path.join(__dirname, '../../tournament_app.db'));
+
+  // Check for existing username/email
+  db.get('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], async (err, row) => {
+    if (err) {
+      db.close();
+      return res.status(500).json({ error: 'Database error.' });
+    }
+    if (row) {
+      db.close();
+      return res.status(400).json({ error: 'Username or email already exists.' });
     }
 
-    // READ: Get connections for a user
-    getFollowers(userId) {
-        const followers = [];
-        for (let [otherId, connections] of this.connections) {
-            connections.forEach(conn => {
-                if (conn.following_id === userId && conn.connection_type === 'accepted') {
-                    followers.push({
-                        ...conn,
-                        user: this.users.get(conn.follower_id)
-                    });
-                }
+    // Hash password
+    const password_hash = await bcrypt.hash(password, 10);
+
+    // Insert new user
+    db.run('INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)', [username, email, password_hash], function(insertErr) {
+      db.close();
+      if (insertErr) {
+        return res.status(500).json({ error: 'Failed to create user.' });
+      }
+      return res.status(201).json({ message: 'User created successfully.' });
+    });
+  });
+});
+
+// Login endpoint
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'All fields are required.' });
+  }
+  const db = new sqlite3.Database(path.join(__dirname, '../../tournament_app.db'));
+  db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
+    db.close();
+    if (err) {
+      return res.status(500).json({ error: 'Database error.' });
+    }
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid username or password.' });
+    }
+    const match = await bcrypt.compare(password, user.password_hash);
+    if (!match) {
+      return res.status(400).json({ error: 'Invalid username or password.' });
+    }
+    // Set session cookie
+    res.cookie('user_id', user.id, { httpOnly: true, sameSite: 'lax' });
+    return res.status(200).json({ message: 'Login successful.' });
+  });
+});
+
+function isAuthenticated(req) {
+  // Check for a session cookie (e.g., user_id)
+  return req.cookies && req.cookies.user_id;
+}
+
+// Middleware to require authentication for API routes
+function requireAuth(req, res, next) {
+  if (!isAuthenticated(req)) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  next();
+}
+
+const protectedPages = [
+  'social.html',
+  'tournaments.html',
+  'profile.html',
+  'notifications.html'
+];
+
+// API endpoint to get current user profile
+app.get('/api/profile', (req, res) => {
+  if (!isAuthenticated(req)) {
+    return res.status(401).json({ error: 'Not authenticated.' });
+  }
+  const db = new sqlite3.Database(path.join(__dirname, '../../tournament_app.db'));
+  db.get('SELECT username, profile_picture, bio FROM users WHERE id = ?', [req.cookies.user_id], (err, user) => {
+    db.close();
+    if (err || !user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    // Always send anonymous avatar if profile_picture is empty or null
+    if (!user.profile_picture || user.profile_picture.trim() === '') {
+      user.profile_picture = 'https://via.placeholder.com/100x100/6a82fb/ffffff?text=👤';
+    }
+    res.json(user);
+  });
+});
+
+// API endpoint to update user profile
+app.post('/api/profile', upload.single('profilePicture'), (req, res) => {
+  if (!isAuthenticated(req)) {
+    return res.status(401).json({ error: 'Not authenticated.' });
+  }
+  const { username, bio, removeProfilePicture } = req.body;
+  if (!username) {
+    return res.status(400).json({ error: 'Username is required.' });
+  }
+  const db = new sqlite3.Database(path.join(__dirname, '../../tournament_app.db'));
+  let profile_picture = null;
+  if (req.file) {
+    profile_picture = '/uploads/' + req.file.filename;
+  }
+  // If user requested removal, set profile_picture to NULL
+  if (removeProfilePicture === 'true') {
+    profile_picture = '';
+  }
+  const updateQuery = (profile_picture !== null)
+    ? 'UPDATE users SET username = ?, profile_picture = ?, bio = ? WHERE id = ?'
+    : 'UPDATE users SET username = ?, bio = ? WHERE id = ?';
+  const updateParams = (profile_picture !== null)
+    ? [username, profile_picture, bio, req.cookies.user_id]
+    : [username, bio, req.cookies.user_id];
+  db.run(updateQuery, updateParams, function(err) {
+    if (err) {
+      db.close();
+      console.error('Profile update error:', err);
+      return res.status(500).json({ error: 'Failed to update profile.' });
+    }
+    db.get('SELECT username, profile_picture, bio FROM users WHERE id = ?', [req.cookies.user_id], (err, user) => {
+      db.close();
+      if (err || !user) {
+        return res.status(404).json({ error: 'User not found.' });
+      }
+      // Always send anonymous avatar if profile_picture is empty or null
+      let profile_picture = user.profile_picture;
+      if (!profile_picture || profile_picture.trim() === '') {
+        profile_picture = 'https://via.placeholder.com/100x100/6a82fb/ffffff?text=👤';
+      }
+      res.json({
+        success: true,
+        username: user.username,
+        bio: user.bio,
+        profile_picture
+      });
+    });
+  });
+});
+
+// Logout endpoint
+app.post('/logout', (req, res) => {
+  res.clearCookie('user_id');
+  res.json({ message: 'Logged out successfully.' });
+});
+
+// Social Posts API Endpoints
+
+// Get posts for social feed
+app.get('/api/posts', (req, res) => {
+  if (!isAuthenticated(req)) {
+    return res.status(401).json({ error: 'Not authenticated.' });
+  }
+  
+  const { category = 'home' } = req.query;
+  const userId = req.cookies.user_id;
+  const db = new sqlite3.Database(path.join(__dirname, '../../tournament_app.db'));
+  
+  let query = '';
+  let params = [];
+  
+  switch (category) {
+    case 'home':
+      // Show all posts ordered by creation date
+      query = `
+        SELECT p.*, u.username, u.profile_picture,
+               (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id) as likes_count,
+               (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comments_count,
+               (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id AND pl.user_id = ?) as user_liked,
+               datetime(p.created_at) as created_at_formatted
+        FROM social_posts p 
+        JOIN users u ON p.user_id = u.id 
+        ORDER BY p.created_at DESC LIMIT 50`;
+      params = [userId];
+      break;
+      
+    case 'friends':
+      // Show posts from users the current user follows
+      query = `
+        SELECT p.*, u.username, u.profile_picture,
+               (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id) as likes_count,
+               (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comments_count,
+               (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id AND pl.user_id = ?) as user_liked,
+               datetime(p.created_at) as created_at_formatted
+        FROM social_posts p 
+        JOIN users u ON p.user_id = u.id 
+        JOIN user_connections uc ON p.user_id = uc.following_id 
+        WHERE uc.follower_id = ? AND uc.connection_type = 'accepted'
+        ORDER BY p.created_at DESC LIMIT 50`;
+      params = [userId, userId];
+      break;
+      
+    case 'you':
+      // Show only current user's posts
+      query = `
+        SELECT p.*, u.username, u.profile_picture,
+               (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id) as likes_count,
+               (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comments_count,
+               (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id AND pl.user_id = ?) as user_liked,
+               datetime(p.created_at) as created_at_formatted
+        FROM social_posts p 
+        JOIN users u ON p.user_id = u.id 
+        WHERE p.user_id = ?
+        ORDER BY p.created_at DESC`;
+      params = [userId, userId];
+      break;
+  }
+  
+  db.all(query, params, (err, posts) => {
+    db.close();
+    if (err) {
+      console.error('Posts fetch error:', err);
+      return res.status(500).json({ error: 'Failed to fetch posts.' });
+    }
+    
+    // Format posts for frontend
+    const formattedPosts = posts.map(post => ({
+      ...post,
+      profile_picture: post.profile_picture || 'https://via.placeholder.com/40x40/6a82fb/ffffff?text=👤',
+      user_liked: post.user_liked > 0
+    }));
+    
+    res.json(formattedPosts);
+  });
+});
+
+// Create a new post
+app.post('/api/posts', upload.single('postImage'), (req, res) => {
+  if (!isAuthenticated(req)) {
+    return res.status(401).json({ error: 'Not authenticated.' });
+  }
+  
+  const { content, post_type = 'general', tournament_id } = req.body;
+  const userId = req.cookies.user_id;
+  
+  console.log(`\n=== CREATING NEW POST ===`);
+  console.log(`User: ${userId}, Content: "${content}"`);
+  
+  if (!content || content.trim().length === 0) {
+    return res.status(400).json({ error: 'Post content is required.' });
+  }
+  
+  let image_url = null;
+  if (req.file) {
+    image_url = '/uploads/' + req.file.filename;
+  }
+  
+  const db = new sqlite3.Database(path.join(__dirname, '../../tournament_app.db'));
+  
+  const query = `
+    INSERT INTO social_posts (user_id, content, image_url, post_type, tournament_id, created_at)
+    VALUES (?, ?, ?, ?, ?, datetime('now'))
+  `;
+  
+  db.run(query, [userId, content.trim(), image_url, post_type, tournament_id], function(err) {
+    if (err) {
+      db.close();
+      console.error('Post creation error:', err);
+      return res.status(500).json({ error: 'Failed to create post.' });
+    }
+    
+    const postId = this.lastID;
+    console.log(`Post created with ID: ${postId}`);
+    
+    // Get the created post with user info
+    db.get(`
+      SELECT p.*, u.username, u.profile_picture
+      FROM social_posts p 
+      JOIN users u ON p.user_id = u.id 
+      WHERE p.id = ?
+    `, [postId], (err, post) => {
+      db.close();
+      if (err) {
+        return res.status(500).json({ error: 'Failed to fetch created post.' });
+      }
+      
+      post.profile_picture = post.profile_picture || 'https://via.placeholder.com/40x40/6a82fb/ffffff?text=👤';
+      post.likes_count = 0;
+      post.comments_count = 0;
+      post.user_liked = false;
+      
+      console.log(`Returning new post: ID=${post.id}, User=${post.username}, Content="${post.content.substring(0, 50)}..."\n`);
+      
+      res.status(201).json(post);
+    });
+  });
+});
+
+// Update a post
+app.put('/api/posts/:postId', (req, res) => {
+  if (!isAuthenticated(req)) {
+    return res.status(401).json({ error: 'Not authenticated.' });
+  }
+  
+  const postId = req.params.postId;
+  const { content } = req.body;
+  const userId = req.cookies.user_id;
+  
+  if (!content || content.trim().length === 0) {
+    return res.status(400).json({ error: 'Post content is required.' });
+  }
+  
+  const db = new sqlite3.Database(path.join(__dirname, '../../tournament_app.db'));
+  
+  // First verify that the user owns this post
+  db.get('SELECT user_id FROM social_posts WHERE id = ?', [postId], (err, post) => {
+    if (err) {
+      db.close();
+      return res.status(500).json({ error: 'Database error.' });
+    }
+    
+    if (!post) {
+      db.close();
+      return res.status(404).json({ error: 'Post not found.' });
+    }
+    
+    if (post.user_id != userId) {
+      db.close();
+      return res.status(403).json({ error: 'You can only edit your own posts.' });
+    }
+    
+    // Update the post
+    const updateQuery = 'UPDATE social_posts SET content = ? WHERE id = ?';
+    db.run(updateQuery, [content.trim(), postId], function(err) {
+      db.close();
+      if (err) {
+        console.error('Post update error:', err);
+        return res.status(500).json({ error: 'Failed to update post.' });
+      }
+      
+      res.json({ success: true, message: 'Post updated successfully.' });
+    });
+  });
+});
+
+// Get comments for a post
+app.get('/api/posts/:postId/comments', (req, res) => {
+  if (!isAuthenticated(req)) {
+    return res.status(401).json({ error: 'Not authenticated.' });
+  }
+  
+  const postId = req.params.postId;
+  console.log(`\n=== FETCHING COMMENTS FOR POST ${postId} ===`);
+  
+  const db = new sqlite3.Database(path.join(__dirname, '../../tournament_app.db'));
+  
+  // First verify the post exists
+  db.get('SELECT id, user_id, content FROM social_posts WHERE id = ?', [postId], (err, post) => {
+    if (err) {
+      console.error('Error checking post existence:', err);
+      db.close();
+      return res.status(500).json({ error: 'Database error.' });
+    }
+    
+    if (!post) {
+      console.log(`Post ${postId} not found!`);
+      db.close();
+      return res.status(404).json({ error: 'Post not found.' });
+    }
+    
+    console.log(`Post ${postId} exists: "${post.content.substring(0, 50)}..." (User ${post.user_id})`);
+    
+    const query = `
+      SELECT c.*, u.username, u.profile_picture,
+             datetime(c.created_at) as created_at_formatted,
+             datetime(c.edited_at) as edited_at_formatted
+      FROM comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.post_id = ?
+      ORDER BY c.created_at ASC
+    `;
+    
+    db.all(query, [postId], (err, comments) => {
+      db.close();
+      if (err) {
+        console.error('Comments fetch error:', err);
+        return res.status(500).json({ error: 'Failed to fetch comments.' });
+      }
+      
+      console.log(`Found ${comments.length} comments for post ${postId}:`);
+      comments.forEach(comment => {
+        console.log(`  Comment ${comment.id}: post_id=${comment.post_id}, user=${comment.username}, content="${comment.content.substring(0, 30)}..."`);
+        if (comment.post_id != postId) {
+          console.log(`  ⚠️  WARNING: Comment ${comment.id} has wrong post_id! Expected ${postId}, got ${comment.post_id}`);
+        }
+      });
+      
+      const formattedComments = comments.map(comment => ({
+        ...comment,
+        profile_picture: comment.profile_picture || 'https://via.placeholder.com/32x32/6a82fb/ffffff?text=👤'
+      }));
+      
+      console.log(`Returning ${formattedComments.length} formatted comments\n`);
+      res.json(formattedComments);
+    });
+  });
+});
+
+// Add a comment to a post
+app.post('/api/posts/:postId/comments', (req, res) => {
+  if (!isAuthenticated(req)) {
+    return res.status(401).json({ error: 'Not authenticated.' });
+  }
+  
+  const postId = req.params.postId;
+  const { content } = req.body;
+  const userId = req.cookies.user_id;
+  
+  console.log(`\n=== ADDING COMMENT TO POST ${postId} ===`);
+  console.log(`User: ${userId}, Content: "${content}"`);
+  
+  if (!content || content.trim().length === 0) {
+    return res.status(400).json({ error: 'Comment content is required.' });
+  }
+  
+  const db = new sqlite3.Database(path.join(__dirname, '../../tournament_app.db'));
+  
+  // First verify the post exists
+  db.get('SELECT id, user_id, content FROM social_posts WHERE id = ?', [postId], (err, post) => {
+    if (err) {
+      console.error('Error checking post existence:', err);
+      db.close();
+      return res.status(500).json({ error: 'Database error.' });
+    }
+    
+    if (!post) {
+      console.log(`Post ${postId} not found!`);
+      db.close();
+      return res.status(404).json({ error: 'Post not found.' });
+    }
+    
+    console.log(`Post ${postId} exists: "${post.content.substring(0, 50)}..." (User ${post.user_id})`);
+    
+    // Insert comment
+    const insertQuery = `
+      INSERT INTO comments (post_id, user_id, content, created_at)
+      VALUES (?, ?, ?, datetime('now'))
+    `;
+    
+    console.log(`Inserting comment with post_id=${postId}, user_id=${userId}`);
+    
+    db.run(insertQuery, [postId, userId, content.trim()], function(err) {
+      if (err) {
+        db.close();
+        console.error('Comment creation error:', err);
+        return res.status(500).json({ error: 'Failed to add comment.' });
+      }
+      
+      const commentId = this.lastID;
+      console.log(`Comment inserted with ID: ${commentId}`);
+      
+      // Verify the comment was inserted correctly
+      db.get('SELECT post_id, user_id, content FROM comments WHERE id = ?', [commentId], (verifyErr, insertedComment) => {
+        if (verifyErr) {
+          console.error('Error verifying inserted comment:', verifyErr);
+        } else {
+          console.log(`Verified comment ${commentId}: post_id=${insertedComment.post_id}, user_id=${insertedComment.user_id}`);
+          if (insertedComment.post_id != postId) {
+            console.log(`⚠️  ERROR: Comment was inserted with wrong post_id! Expected ${postId}, got ${insertedComment.post_id}`);
+          }
+        }
+        
+        // Get actual comment count and update it
+        db.get('SELECT COUNT(*) as comment_count FROM comments WHERE post_id = ?', [postId], (countErr, countResult) => {
+          if (countErr) {
+            console.error('Failed to get comment count:', countErr);
+          } else {
+            console.log(`Post ${postId} now has ${countResult.comment_count} comments`);
+            // Update post's comment count with actual count
+            db.run('UPDATE social_posts SET comments_count = ? WHERE id = ?', [countResult.comment_count, postId], (updateErr) => {
+              if (updateErr) {
+                console.error('Failed to update comment count:', updateErr);
+              }
             });
-        }
-        return followers;
-    }
-
-    getFollowing(userId) {
-        const userConnections = this.connections.get(userId) || [];
-        return userConnections
-            .filter(conn => conn.connection_type === 'accepted')
-            .map(conn => ({
-                ...conn,
-                user: this.users.get(conn.following_id)
-            }));
-    }
-
-    getPendingRequests(userId) {
-        const pending = [];
-        for (let [otherId, connections] of this.connections) {
-            connections.forEach(conn => {
-                if (conn.following_id === userId && conn.connection_type === 'pending') {
-                    pending.push({
-                        ...conn,
-                        user: this.users.get(conn.follower_id)
-                    });
-                }
-            });
-        }
-        return pending;
-    }
-
-    // Get outgoing pending requests (requests sent by the user)
-    getOutgoingPendingRequests(userId) {
-        const userConnections = this.connections.get(userId) || [];
-        return userConnections
-            .filter(conn => conn.connection_type === 'pending')
-            .map(conn => ({
-                ...conn,
-                user: this.users.get(conn.following_id)
-            }));
-    }
-
-    // UPDATE: Change connection status
-    updateConnectionStatus(connectionId, newStatus) {
-        for (let [userId, connections] of this.connections) {
-            const connectionIndex = connections.findIndex(conn => conn.id === connectionId);
-            if (connectionIndex !== -1) {
-                const connection = connections[connectionIndex];
-                connections[connectionIndex].connection_type = newStatus;
-                this.connections.set(userId, connections);
-                
-                // If accepting a follow request, automatically follow them back (mutual follow)
-                if (newStatus === 'accepted' && connection.following_id === this.currentUserId) {
-                    const followBackConnection = {
-                        id: Date.now().toString() + '_followback',
-                        follower_id: this.currentUserId,
-                        following_id: connection.follower_id,
-                        connection_type: 'accepted',
-                        created_at: new Date().toISOString()
-                    };
-                    
-                    // Check if we're not already following them back
-                    const existingFollowBack = this.findConnection(this.currentUserId, connection.follower_id);
-                    if (!existingFollowBack) {
-                        if (!this.connections.has(this.currentUserId)) {
-                            this.connections.set(this.currentUserId, []);
-                        }
-                        this.connections.get(this.currentUserId).push(followBackConnection);
-                    }
-                }
-                
-                const statusMessages = {
-                    'accepted': 'Follow request accepted! You are now following each other.',
-                    'blocked': 'User has been blocked!',
-                    'pending': 'Status updated to pending!'
-                };
-                
-                alert(statusMessages[newStatus] || 'Status updated!');
-                this.updateConnectionsUI();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // DELETE: Unfollow user
-    unfollowUser(targetUserId) {
-        const connection = this.findConnection(this.currentUserId, targetUserId);
-        if (connection) {
-            return this.removeConnection(connection.id);
-        }
-        return false;
-    }
-
-    // DELETE: Remove connection
-    removeConnection(connectionId) {
-        if (confirm('Are you sure you want to remove this connection?')) {
-            for (let [userId, connections] of this.connections) {
-                const connectionIndex = connections.findIndex(conn => conn.id === connectionId);
-                if (connectionIndex !== -1) {
-                    connections.splice(connectionIndex, 1);
-                    this.connections.set(userId, connections);
-                    alert('Connection removed successfully!');
-                    this.updateConnectionsUI();
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    // Helper: Find connection between two users
-    findConnection(followerId, followingId) {
-        const userConnections = this.connections.get(followerId) || [];
-        return userConnections.find(conn => 
-            conn.follower_id === followerId && conn.following_id === followingId
-        );
-    }
-
-    // Helper: Check if user is connected
-    isConnected(targetUserId) {
-        return this.findConnection(this.currentUserId, targetUserId) !== undefined;
-    }
-
-    // Helper: Get connection status
-    getConnectionStatus(targetUserId) {
-        const connection = this.findConnection(this.currentUserId, targetUserId);
-        return connection ? connection.connection_type : null;
-    }
-
-    // UI: Update connections in profile tabs
-    updateConnectionsUI() {
-        this.updateFollowersTab();
-        this.updateFollowingTab();
-        this.updatePendingTab();
-    }
-
-    updateFollowersTab() {
-        const followers = this.getFollowers(this.currentUserId);
-        const followersContainer = document.getElementById('followers-list');
-        
-        if (followersContainer) {
-            if (followers.length === 0) {
-                followersContainer.innerHTML = '<p class="no-connections">No followers yet.</p>';
-            } else {
-                followersContainer.innerHTML = followers.map(follower => `
-                    <li class="insta-card">
-                        <div class="user-avatar-small">${follower.user.username.charAt(0).toUpperCase()}</div>
-                        <div class="insta-content">
-                            <span class="insta-title">${follower.user.username}</span>
-                            <span class="insta-meta">Following since ${new Date(follower.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <div class="connection-actions">
-                            <button class="btn-small btn-danger remove-connection-btn" data-connection-id="${follower.id}">Remove</button>
-                        </div>
-                    </li>
-                `).join('');
-            }
-        }
-    }
-
-    updateFollowingTab() {
-        const following = this.getFollowing(this.currentUserId);
-        const followingContainer = document.getElementById('following-list');
-        
-        if (followingContainer) {
-            if (following.length === 0) {
-                followingContainer.innerHTML = '<p class="no-connections">Not following anyone yet.</p>';
-            } else {
-                followingContainer.innerHTML = following.map(follow => `
-                    <li class="insta-card">
-                        <div class="user-avatar-small">${follow.user.username.charAt(0).toUpperCase()}</div>
-                        <div class="insta-content">
-                            <span class="insta-title">${follow.user.username}</span>
-                            <span class="insta-meta">Following since ${new Date(follow.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <div class="connection-actions">
-                            <button class="btn-small btn-secondary unfollow-user-btn" data-user-id="${follow.user.id}">Unfollow</button>
-                        </div>
-                    </li>
-                `).join('');
-            }
-        }
-    }
-
-    updatePendingTab() {
-        const incomingPending = this.getPendingRequests(this.currentUserId);
-        const outgoingPending = this.getOutgoingPendingRequests(this.currentUserId);
-        const pendingContainer = document.getElementById('pending-list');
-        
-        if (pendingContainer) {
-            let content = '';
-            
-            // Outgoing pending requests (people you've requested to follow)
-            if (outgoingPending.length > 0) {
-                content += '<h3 style="color: #6a82fb; margin: 1rem 0 0.5rem 0; font-size: 1rem;">Requests Sent</h3>';
-                content += outgoingPending.map(request => `
-                    <li class="insta-card">
-                        <div class="user-avatar-small">${request.user.username.charAt(0).toUpperCase()}</div>
-                        <div class="insta-content">
-                            <span class="insta-title">${request.user.username}</span>
-                            <span class="insta-meta">Follow request sent ${new Date(request.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <div class="connection-actions">
-                            <button class="btn-small btn-secondary remove-connection-btn" data-connection-id="${request.id}">Cancel</button>
-                        </div>
-                    </li>
-                `).join('');
+          }
+          
+          // Get the created comment with user info
+          db.get(`
+            SELECT c.*, u.username, u.profile_picture
+            FROM comments c
+            JOIN users u ON c.user_id = u.id
+            WHERE c.id = ?
+          `, [commentId], (err, comment) => {
+            db.close();
+            if (err) {
+              return res.status(500).json({ error: 'Failed to fetch created comment.' });
             }
             
-            // Incoming pending requests (people who want to follow you)
-            if (incomingPending.length > 0) {
-                content += '<h3 style="color: #6a82fb; margin: 1rem 0 0.5rem 0; font-size: 1rem;">Requests Received</h3>';
-                content += incomingPending.map(request => `
-                    <li class="insta-card">
-                        <div class="user-avatar-small">${request.user.username.charAt(0).toUpperCase()}</div>
-                        <div class="insta-content">
-                            <span class="insta-title">${request.user.username}</span>
-                            <span class="insta-meta">Requested to follow ${new Date(request.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <div class="connection-actions">
-                            <button class="btn-small btn-success accept-request-btn" data-connection-id="${request.id}">Accept</button>
-                            <button class="btn-small btn-danger reject-request-btn" data-connection-id="${request.id}">Reject</button>
-                        </div>
-                    </li>
-                `).join('');
-            }
+            comment.profile_picture = comment.profile_picture || 'https://via.placeholder.com/32x32/6a82fb/ffffff?text=👤';
+            comment.comments_count = countResult ? countResult.comment_count : null;
             
-            if (content === '') {
-                pendingContainer.innerHTML = '<p class="no-connections">No pending requests.</p>';
-            } else {
-                pendingContainer.innerHTML = content;
-            }
-        }
-    }
-
-    // UI: Switch connection tabs
-    switchConnectionsTab(tabName) {
-        // Hide all connection content
-        document.querySelectorAll('.connections-content').forEach(content => {
-            content.style.display = 'none';
+            console.log(`Returning comment: ID=${comment.id}, post_id=${comment.post_id}, user=${comment.username}\n`);
+            res.status(201).json(comment);
+          });
         });
+      });
+    });
+  });
+});
 
-        // Show selected content
-        const selectedContent = document.getElementById(`${tabName}-content`);
-        if (selectedContent) {
-            selectedContent.style.display = 'block';
+// Like/Unlike a post
+app.post('/api/posts/:postId/like', (req, res) => {
+  if (!isAuthenticated(req)) {
+    return res.status(401).json({ error: 'Not authenticated.' });
+  }
+  
+  const postId = req.params.postId;
+  const userId = req.cookies.user_id;
+  const db = new sqlite3.Database(path.join(__dirname, '../../tournament_app.db'));
+  
+  // Check if user already liked the post
+  db.get('SELECT * FROM post_likes WHERE post_id = ? AND user_id = ?', [postId, userId], (err, existingLike) => {
+    if (err) {
+      db.close();
+      return res.status(500).json({ error: 'Database error.' });
+    }
+    
+    if (existingLike) {
+      // Unlike the post
+      db.run('DELETE FROM post_likes WHERE post_id = ? AND user_id = ?', [postId, userId], (deleteErr) => {
+        if (deleteErr) {
+          db.close();
+          return res.status(500).json({ error: 'Failed to unlike post.' });
         }
-
-        // Update tab buttons
-        document.querySelectorAll('.connections-tab-btn').forEach(btn => {
-            btn.classList.remove('active');
+        
+        // Get actual like count from database
+        db.get('SELECT COUNT(*) as like_count FROM post_likes WHERE post_id = ?', [postId], (countErr, result) => {
+          if (countErr) {
+            db.close();
+            return res.status(500).json({ error: 'Failed to get like count.' });
+          }
+          
+          // Update post's like count with actual count
+          db.run('UPDATE social_posts SET likes_count = ? WHERE id = ?', [result.like_count, postId], (updateErr) => {
+            db.close();
+            if (updateErr) {
+              return res.status(500).json({ error: 'Failed to update like count.' });
+            }
+            res.json({ liked: false, message: 'Post unliked.', likes_count: result.like_count });
+          });
         });
+      });
+    } else {
+      // Like the post
+      db.run('INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)', [postId, userId], (insertErr) => {
+        if (insertErr) {
+          db.close();
+          return res.status(500).json({ error: 'Failed to like post.' });
+        }
         
-        const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
-        if (activeTab) {
-            activeTab.classList.add('active');
-        }
+        // Get actual like count from database
+        db.get('SELECT COUNT(*) as like_count FROM post_likes WHERE post_id = ?', [postId], (countErr, result) => {
+          if (countErr) {
+            db.close();
+            return res.status(500).json({ error: 'Failed to get like count.' });
+          }
+          
+          // Update post's like count with actual count
+          db.run('UPDATE social_posts SET likes_count = ? WHERE id = ?', [result.like_count, postId], (updateErr) => {
+            db.close();
+            if (updateErr) {
+              return res.status(500).json({ error: 'Failed to update like count.' });
+            }
+            res.json({ liked: true, message: 'Post liked.', likes_count: result.like_count });
+          });
+        });
+      });
     }
+  });
+});
 
-    // UI: Show discover users modal
-    showDiscoverUsersModal() {
-        const modal = this.createDiscoverUsersModal();
-        document.body.appendChild(modal);
+// Delete a post (only if user owns it)
+app.delete('/api/posts/:postId', (req, res) => {
+  if (!isAuthenticated(req)) {
+    return res.status(401).json({ error: 'Not authenticated.' });
+  }
+  
+  const postId = req.params.postId;
+  const userId = req.cookies.user_id;
+  const db = new sqlite3.Database(path.join(__dirname, '../../tournament_app.db'));
+  
+  // Check if user owns the post
+  db.get('SELECT * FROM social_posts WHERE id = ? AND user_id = ?', [postId, userId], (err, post) => {
+    if (err) {
+      db.close();
+      return res.status(500).json({ error: 'Database error.' });
     }
-
-    createDiscoverUsersModal() {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay discover-modal';
-        
-        const availableUsers = Array.from(this.users.values())
-            .filter(user => user.id !== this.currentUserId)
-            .map(user => {
-                const isConnected = this.isConnected(user.id);
-                const connectionStatus = this.getConnectionStatus(user.id);
-                
-                let actionButton = '';
-                if (!isConnected) {
-                    actionButton = `<button class="btn-primary follow-user-btn" data-user-id="${user.id}">Follow</button>`;
-                } else if (connectionStatus === 'pending') {
-                    actionButton = `<button class="btn-secondary" disabled>Pending</button>`;
-                } else if (connectionStatus === 'accepted') {
-                    actionButton = `<button class="btn-danger unfollow-user-btn" data-user-id="${user.id}">Unfollow</button>`;
-                } else if (connectionStatus === 'blocked') {
-                    actionButton = `<button class="btn-secondary" disabled>Blocked</button>`;
-                }
-
-                return `
-                    <div class="user-discover-item">
-                        <div class="user-info">
-                            <div class="user-avatar">${user.username.charAt(0).toUpperCase()}</div>
-                            <div class="user-details">
-                                <div class="user-name">${user.username}</div>
-                                <div class="user-email">${user.email}</div>
-                                <div class="user-bio">${user.bio || 'No bio available'}</div>
-                            </div>
-                        </div>
-                        <div class="user-actions">
-                            ${actionButton}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-        modal.innerHTML = `
-            <div class="modal-content large">
-                <div class="modal-header">
-                    <h2>Discover Users</h2>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <div class="discover-users-list">
-                    ${availableUsers || '<p class="no-users">No users to discover.</p>'}
-                </div>
-            </div>
-        `;
-        return modal;
+    
+    if (!post) {
+      db.close();
+      return res.status(404).json({ error: 'Post not found or you do not have permission to delete it.' });
     }
+    
+    // Delete the post (cascade will handle comments and likes)
+    db.run('DELETE FROM social_posts WHERE id = ?', [postId], (deleteErr) => {
+      db.close();
+      if (deleteErr) {
+        return res.status(500).json({ error: 'Failed to delete post.' });
+      }
+      res.json({ success: true, message: 'Post deleted successfully.' });
+    });
+  });
+});
 
-    refreshDiscoverModal() {
-        const existingModal = document.querySelector('.discover-modal');
-        if (existingModal) {
-            existingModal.remove();
-            this.showDiscoverUsersModal();
-        }
+// Delete account endpoint
+app.post('/api/delete-account', (req, res) => {
+  if (!isAuthenticated(req)) {
+    return res.status(401).json({ error: 'Not authenticated.' });
+  }
+  const userId = req.cookies.user_id;
+  const db = new sqlite3.Database(path.join(__dirname, '../../tournament_app.db'));
+  // First, check if user exists
+  db.get('SELECT * FROM users WHERE id = ?', [userId], function(err, user) {
+    if (err) {
+      db.close();
+      return res.status(500).json({ error: 'Database error.' });
     }
-
-    closeModal() {
-        const modal = document.querySelector('.modal-overlay');
-        if (modal) {
-            modal.remove();
-        }
+    if (!user) {
+      db.close();
+      res.clearCookie('user_id');
+      return res.status(404).json({ error: 'User not found.' });
     }
+    // Delete user from users table
+    db.run('DELETE FROM users WHERE id = ?', [userId], function(err) {
+      if (err) {
+        db.close();
+        return res.status(500).json({ error: 'Failed to delete account.' });
+      }
+      // Optionally: delete related data (posts, connections, etc.)
+      db.close();
+      res.clearCookie('user_id');
+      return res.json({ success: true, message: 'Account deleted.' });
+    });
+  });
+});
 
-    // Sample data
-    loadSampleData() {
-        // Load sample users
-        this.users.set(1, { id: 1, username: 'GamerTag123', email: 'gamer@example.com', bio: 'Current logged in user' });
-        this.users.set(2, { id: 2, username: 'ProGamer', email: 'pro@example.com', bio: 'Professional esports player' });
-        this.users.set(3, { id: 3, username: 'StreamerQueen', email: 'streamer@example.com', bio: 'Twitch streamer and content creator' });
-        this.users.set(4, { id: 4, username: 'TechNinja', email: 'tech@example.com', bio: 'Tech enthusiast and developer' });
-        this.users.set(5, { id: 5, username: 'StrategyMaster', email: 'strategy@example.com', bio: 'Strategy game expert' });
-        this.users.set(6, { id: 6, username: 'CasualGamer', email: 'casual@example.com', bio: 'Weekend warrior gamer' });
-        this.users.set(7, { id: 7, username: 'RocketAce', email: 'rocket@example.com', bio: 'Rocket League champion' });
-        this.users.set(8, { id: 8, username: 'ApexHunter', email: 'apex@example.com', bio: 'Battle royale specialist' });
-        this.users.set(9, { id: 9, username: 'ValorantSniper', email: 'valorant@example.com', bio: 'Tactical FPS master' });
-        this.users.set(10, { id: 10, username: 'MinecraftBuilder', email: 'minecraft@example.com', bio: 'Creative sandbox enthusiast' });
-        this.users.set(11, { id: 11, username: 'FightingLegend', email: 'fighting@example.com', bio: 'Fighting game tournament winner' });
-
-        // Load sample connections
-        this.connections.set(1, [
-            {
-                id: 'conn1',
-                follower_id: 1,
-                following_id: 2,
-                connection_type: 'accepted',
-                created_at: '2025-07-10T10:00:00Z'
-            }
-        ]);
-
-        this.connections.set(3, [
-            {
-                id: 'conn2',
-                follower_id: 3,
-                following_id: 1,
-                connection_type: 'accepted',
-                created_at: '2025-07-09T16:20:00Z'
-            }
-        ]);
-
-        this.connections.set(4, [
-            {
-                id: 'conn3',
-                follower_id: 4,
-                following_id: 1,
-                connection_type: 'pending',
-                created_at: '2025-07-12T08:15:00Z'
-            }
-        ]);
-
-        this.connections.set(5, [
-            {
-                id: 'conn9',
-                follower_id: 5,
-                following_id: 1,
-                connection_type: 'pending',
-                created_at: '2025-07-12T14:30:00Z'
-            }
-        ]);
-
-        this.connections.set(6, [
-            {
-                id: 'conn10',
-                follower_id: 6,
-                following_id: 1,
-                connection_type: 'pending',
-                created_at: '2025-07-12T10:45:00Z'
-            }
-        ]);
-
-        this.connections.set(7, [
-            {
-                id: 'conn4',
-                follower_id: 7,
-                following_id: 1,
-                connection_type: 'accepted',
-                created_at: '2025-07-08T14:30:00Z'
-            }
-        ]);
-
-        this.connections.set(8, [
-            {
-                id: 'conn5',
-                follower_id: 8,
-                following_id: 1,
-                connection_type: 'accepted',
-                created_at: '2025-07-07T11:45:00Z'
-            }
-        ]);
-
-        this.connections.set(9, [
-            {
-                id: 'conn6',
-                follower_id: 9,
-                following_id: 1,
-                connection_type: 'accepted',
-                created_at: '2025-07-06T19:20:00Z'
-            }
-        ]);
-
-        this.connections.set(10, [
-            {
-                id: 'conn7',
-                follower_id: 10,
-                following_id: 1,
-                connection_type: 'accepted',
-                created_at: '2025-07-05T13:10:00Z'
-            }
-        ]);
-
-        this.connections.set(11, [
-            {
-                id: 'conn8',
-                follower_id: 11,
-                following_id: 1,
-                connection_type: 'accepted',
-                created_at: '2025-07-04T16:55:00Z'
-            }
-        ]);
+// Function to recalculate and fix post counts in database
+function updatePostCounts() {
+  const db = new sqlite3.Database(path.join(__dirname, '../../tournament_app.db'));
+  
+  console.log('Updating post counts in database...');
+  
+  // Update comments_count for all posts
+  db.run(`
+    UPDATE social_posts 
+    SET comments_count = (
+      SELECT COUNT(*) 
+      FROM comments 
+      WHERE comments.post_id = social_posts.id
+    )
+  `, (err) => {
+    if (err) {
+      console.error('Error updating comments count:', err);
+    } else {
+      console.log('Comments count updated successfully');
     }
+  });
+  
+  // Update likes_count for all posts
+  db.run(`
+    UPDATE social_posts 
+    SET likes_count = (
+      SELECT COUNT(*) 
+      FROM post_likes 
+      WHERE post_likes.post_id = social_posts.id
+    )
+  `, (err) => {
+    if (err) {
+      console.error('Error updating likes count:', err);
+    } else {
+      console.log('Likes count updated successfully');
+    }
+    db.close();
+  });
 }
 
-// Match Results CRUD System
-class MatchResultsCRUD {
-    constructor() {
-        this.matchResults = new Map(); // Store match results by tournament ID
-        this.currentTournamentId = null;
-        this.init();
+// ================================
+// TOURNAMENT API ROUTES  
+// ================================
+
+// Create a new tournament (temporarily without auth for testing)
+app.post('/api/tournaments', (req, res) => {
+  console.log('\n=== CREATING NEW TOURNAMENT ===');
+  console.log('Request body:', req.body);
+  console.log('User ID:', req.cookies.user_id);
+  
+  const dbPath = path.join(__dirname, '../../tournament_app.db');
+  console.log('Database path:', dbPath);
+  
+  const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error('Database connection error:', err.message);
+      return res.status(500).json({ error: 'Database connection failed', details: err.message });
+    }
+    console.log('✅ Connected to tournaments database for creation');
+  });
+  
+  const userId = req.cookies.user_id || 1; // Default to admin user for testing
+  
+  const {
+    title,
+    description,
+    game_type,
+    entry_fee,
+    prize_pool,
+    max_participants,
+    start_date,
+    end_date,
+    status
+  } = req.body;
+
+  console.log('Extracted data:', {
+    title, description, game_type, entry_fee, prize_pool, 
+    max_participants, start_date, end_date, status
+  });
+
+  // Validation
+  if (!title || !game_type || !start_date) {
+    console.log('Validation failed: missing required fields');
+    db.close();
+    return res.status(400).json({ error: 'Title, game type, and start date are required' });
+  }
+
+  // Check if start date is in the future
+  const startDateTime = new Date(start_date);
+  const now = new Date();
+  console.log('Start date:', startDateTime, 'Current time:', now);
+  console.log('Start date string:', start_date);
+  console.log('Start date valid:', !isNaN(startDateTime.getTime()));
+  
+  if (isNaN(startDateTime.getTime())) {
+    console.log('Validation failed: invalid start date format');
+    db.close();
+    return res.status(400).json({ error: 'Invalid start date format' });
+  }
+  
+  if (startDateTime <= now) {
+    console.log('Validation failed: start date not in future');
+    db.close();
+    return res.status(400).json({ error: 'Start date must be in the future' });
+  }
+
+  // Check if end date is after start date (if provided)
+  if (end_date) {
+    const endDateTime = new Date(end_date);
+    console.log('End date:', endDateTime);
+    console.log('End date string:', end_date);
+    console.log('End date valid:', !isNaN(endDateTime.getTime()));
+    
+    if (isNaN(endDateTime.getTime())) {
+      console.log('Validation failed: invalid end date format');
+      db.close();
+      return res.status(400).json({ error: 'Invalid end date format' });
+    }
+    
+    // Compare the dates properly
+    const startTime = startDateTime.getTime();
+    const endTime = endDateTime.getTime();
+    console.log('Start timestamp:', startTime, 'End timestamp:', endTime);
+    console.log('End > Start:', endTime > startTime);
+    
+    if (endTime <= startTime) {
+      console.log('Validation failed: end date not after start date');
+      console.log(`End date (${end_date}) must be after start date (${start_date})`);
+      db.close();
+      return res.status(400).json({ error: 'End date must be after start date' });
+    }
+  }
+
+  const query = `
+    INSERT INTO tournaments (
+      title, description, game_type, entry_fee, prize_pool, 
+      max_participants, start_date, end_date, status, organizer_id, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+  `;
+
+  const values = [
+    title,
+    description || null,
+    game_type,
+    parseFloat(entry_fee) || 0,
+    parseFloat(prize_pool) || 0,
+    max_participants ? parseInt(max_participants) : null,
+    start_date,
+    end_date || null,
+    status || 'upcoming',
+    userId
+  ];
+
+  console.log('SQL query:', query);
+  console.log('Values:', values);
+
+  db.run(query, values, function(err) {
+    if (err) {
+      console.error('Error creating tournament:', err);
+      db.close();
+      return res.status(500).json({ error: 'Failed to create tournament: ' + err.message });
     }
 
-    init() {
-        this.setupEventListeners();
-        this.loadSampleData();
+    console.log('Tournament created with ID:', this.lastID);
+
+    // Get the created tournament
+    db.get('SELECT * FROM tournaments WHERE id = ?', [this.lastID], (err, tournament) => {
+      db.close();
+      if (err) {
+        console.error('Error fetching created tournament:', err);
+        return res.status(500).json({ error: 'Tournament created but failed to fetch details' });
+      }
+      
+      console.log('Created tournament:', tournament);
+      console.log('=== TOURNAMENT CREATION COMPLETE ===\n');
+      
+      res.status(201).json({ 
+        success: true, 
+        message: 'Tournament created successfully',
+        tournament: tournament
+      });
+    });
+  });
+});
+
+// Get all tournaments with optional filters
+app.get('/api/tournaments', (req, res) => {
+  console.log('\n🎯🎯🎯 GET /api/tournaments ROUTE HIT! 🎯🎯🎯');
+  console.log('✅ THIS ROUTE IS WORKING!');
+  console.log('Query params:', req.query);
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
+  console.log('Original URL:', req.originalUrl);
+  
+  const dbPath = path.join(__dirname, '../../tournament_app.db');
+  console.log('Database path:', dbPath);
+  
+  const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error('Database connection error:', err.message);
+      return res.status(500).json({ error: 'Database connection failed', details: err.message });
     }
+    console.log('✅ Connected to tournaments database');
+  });
+  
+  const { game_type, status, start_date, end_date } = req.query;
+  
+  let query = `
+    SELECT 
+      t.*,
+      u.username as organizer_username,
+      strftime('%Y-%m-%d %H:%M:%S', t.start_date) as formatted_start_date,
+      strftime('%Y-%m-%d %H:%M:%S', t.end_date) as formatted_end_date,
+      strftime('%Y-%m-%d %H:%M:%S', t.created_at) as formatted_created_at
+    FROM tournaments t
+    LEFT JOIN users u ON t.organizer_id = u.id
+    WHERE 1=1
+  `;
+  
+  const params = [];
+  
+  if (game_type) {
+    query += ' AND t.game_type = ?';
+    params.push(game_type);
+  }
+  
+  if (status) {
+    query += ' AND t.status = ?';
+    params.push(status);
+  }
+  
+  if (start_date) {
+    query += ' AND date(t.start_date) >= date(?)';
+    params.push(start_date);
+  }
+  
+  if (end_date) {
+    query += ' AND date(t.start_date) <= date(?)';
+    params.push(end_date);
+  }
+  
+  query += ' ORDER BY t.start_date ASC';
+  
+  console.log('Final SQL query:', query);
+  console.log('Query parameters:', params);
+  
+  db.all(query, params, (err, tournaments) => {
+    db.close();
+    if (err) {
+      console.error('❌ Error fetching tournaments:', err);
+      return res.status(500).json({ error: 'Failed to fetch tournaments', details: err.message });
+    }
+    
+    console.log(`✅ Found ${tournaments.length} tournaments`);
+    tournaments.forEach(t => {
+      console.log(`  - ID: ${t.id}, Title: ${t.title}, Status: ${t.status}`);
+    });
+    
+    res.json({ 
+      success: true,
+      tournaments: tournaments,
+      count: tournaments.length 
+    });
+  });
+});
 
-    setupEventListeners() {
-        document.addEventListener('click', (e) => {
-            // View Match Results button
-            if (e.target.classList.contains('view-match-results-btn')) {
-                e.preventDefault();
-                const tournamentId = e.target.dataset.tournamentId;
-                this.showMatchResultsModal(tournamentId);
-            }
+// Get a specific tournament by ID
+app.get('/api/tournaments/:id', (req, res) => {
+  const db = new sqlite3.Database(path.join(__dirname, '../../tournament_app.db'));
+  const tournamentId = req.params.id;
+  
+  const query = `
+    SELECT 
+      t.*,
+      u.username as organizer_username,
+      strftime('%Y-%m-%d %H:%M:%S', t.start_date) as formatted_start_date,
+      strftime('%Y-%m-%d %H:%M:%S', t.end_date) as formatted_end_date,
+      strftime('%Y-%m-%d %H:%M:%S', t.created_at) as formatted_created_at
+    FROM tournaments t
+    LEFT JOIN users u ON t.organizer_id = u.id
+    WHERE t.id = ?
+  `;
+  
+  db.get(query, [tournamentId], (err, tournament) => {
+    db.close();
+    if (err) {
+      console.error('Error fetching tournament:', err);
+      return res.status(500).json({ error: 'Failed to fetch tournament' });
+    }
+    if (!tournament) {
+      return res.status(404).json({ error: 'Tournament not found' });
+    }
+    res.json({ tournament });
+  });
+});
 
-            // Report new match result
-            if (e.target.classList.contains('report-match-btn')) {
-                e.preventDefault();
-                this.showReportMatchModal();
-            }
+// Update a tournament (temporarily without auth for testing)
+app.put('/api/tournaments/:id', (req, res) => {
+  console.log('\n=== UPDATING TOURNAMENT ===');
+  console.log('Tournament ID:', req.params.id);
+  console.log('Request body:', req.body);
+  
+  const dbPath = path.join(__dirname, '../../tournament_app.db');
+  const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error('Database connection error:', err.message);
+      return res.status(500).json({ error: 'Database connection failed', details: err.message });
+    }
+  });
+  
+  const tournamentId = req.params.id;
+  const userId = req.cookies.user_id || 1; // Default to admin user for testing
+  
+  // Skip authorization check for testing
+  const {
+    title,
+    description,
+    game_type,
+    entry_fee,
+    prize_pool,
+    max_participants,
+    start_date,
+    end_date,
+    status
+  } = req.body;
 
-            // Edit match result
-            if (e.target.classList.contains('edit-match-btn')) {
-                const matchId = e.target.dataset.matchId;
-                this.editMatchResult(matchId);
-            }
+  console.log('Update data:', { title, description, game_type, status });
 
-            // Delete match result
-            if (e.target.classList.contains('delete-match-btn')) {
-                const matchId = e.target.dataset.matchId;
-                this.deleteMatchResult(matchId);
-            }
+    const query = `
+      UPDATE tournaments SET
+        title = COALESCE(?, title),
+        description = COALESCE(?, description),
+        game_type = COALESCE(?, game_type),
+        entry_fee = COALESCE(?, entry_fee),
+        prize_pool = COALESCE(?, prize_pool),
+        max_participants = COALESCE(?, max_participants),
+        start_date = COALESCE(?, start_date),
+        end_date = COALESCE(?, end_date),
+        status = COALESCE(?, status),
+        updated_at = datetime('now')
+      WHERE id = ?
+    `;
 
-            // Close modal
-            if (e.target.classList.contains('close-modal') || e.target.classList.contains('modal-overlay')) {
-                this.closeModal();
-            }
+    const values = [
+      title || null,
+      description || null,
+      game_type || null,
+      entry_fee ? parseFloat(entry_fee) : null,
+      prize_pool ? parseFloat(prize_pool) : null,
+      max_participants ? parseInt(max_participants) : null,
+      start_date || null,
+      end_date || null,
+      status || null,
+      tournamentId
+    ];
+
+    db.run(query, values, function(err) {
+      if (err) {
+        console.error('Error updating tournament:', err);
+        db.close();
+        return res.status(500).json({ error: 'Failed to update tournament' });
+      }
+
+      // Get the updated tournament
+      db.get('SELECT * FROM tournaments WHERE id = ?', [tournamentId], (err, updatedTournament) => {
+        db.close();
+        if (err) {
+          return res.status(500).json({ error: 'Tournament updated but failed to fetch details' });
+        }
+        res.json({ 
+          success: true, 
+          message: 'Tournament updated successfully',
+          tournament: updatedTournament
         });
+      });
+    });
+});
 
-        // Form submissions
-        document.addEventListener('submit', (e) => {
-            if (e.target.id === 'report-match-form') {
-                e.preventDefault();
-                this.handleReportMatch(e.target);
-            }
-
-            if (e.target.id === 'edit-match-form') {
-                e.preventDefault();
-                this.handleEditMatch(e.target);
-            }
-        });
+// Delete a tournament (temporarily without auth for testing)
+app.delete('/api/tournaments/:id', (req, res) => {
+  console.log('\n=== DELETING TOURNAMENT ===');
+  console.log('Tournament ID:', req.params.id);
+  
+  const dbPath = path.join(__dirname, '../../tournament_app.db');
+  const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error('Database connection error:', err.message);
+      return res.status(500).json({ error: 'Database connection failed', details: err.message });
     }
-
-    // CREATE: Report new match result
-    reportMatchResult(tournamentId, matchData) {
-        if (!this.matchResults.has(tournamentId)) {
-            this.matchResults.set(tournamentId, []);
-        }
-
-        const matches = this.matchResults.get(tournamentId);
-        
-        const newMatch = {
-            id: Date.now().toString(),
-            tournamentId: tournamentId,
-            player1: matchData.player1,
-            player2: matchData.player2,
-            score1: parseInt(matchData.score1),
-            score2: parseInt(matchData.score2),
-            winner: this.determineWinner(matchData.score1, matchData.score2, matchData.player1, matchData.player2),
-            matchDate: matchData.date || new Date().toISOString().split('T')[0],
-            reportedBy: matchData.reportedBy || 'Admin',
-            reportedAt: new Date().toISOString(),
-            status: 'confirmed'
-        };
-
-        matches.push(newMatch);
-        this.matchResults.set(tournamentId, matches);
-        
-        console.log('Match result reported:', newMatch);
-        return newMatch;
+  });
+  
+  const tournamentId = req.params.id;
+  const userId = req.cookies.user_id || 1; // Default to admin user for testing
+  
+  // Skip authorization check for testing - just delete the tournament
+  db.run('DELETE FROM tournaments WHERE id = ?', [tournamentId], function(err) {
+    db.close();
+    if (err) {
+      console.error('Error deleting tournament:', err);
+      return res.status(500).json({ error: 'Failed to delete tournament', details: err.message });
     }
-
-    // READ: Get match results for a tournament
-    getMatchResults(tournamentId) {
-        return this.matchResults.get(tournamentId) || [];
+    
+    if (this.changes === 0) {
+      return res.status(404).json({ error: 'Tournament not found' });
     }
+    
+    console.log(`✅ Tournament ${tournamentId} deleted successfully`);
+    res.json({ 
+      success: true, 
+      message: 'Tournament deleted successfully'
+    });
+  });
+});
 
-    // READ: Get specific match result
-    getMatchResult(matchId) {
-        for (let [tournamentId, matches] of this.matchResults) {
-            const match = matches.find(m => m.id === matchId);
-            if (match) return match;
-        }
-        return null;
+// ================================
+// STATIC FILE MIDDLEWARE (AFTER API ROUTES)
+// ================================
+
+// Serve static files from src directory
+app.use(express.static(path.join(__dirname, '../../src')));
+// Serve uploaded files
+app.use('/uploads', express.static(uploadsDir));
+
+// ================================
+// PAGE ROUTES (MUST BE LAST)
+// ================================
+
+// Serve HTML pages - SHOULD NEVER MATCH /api/* paths
+app.get('/:page', (req, res, next) => {
+  const page = req.params.page;
+  
+  console.log(`🌟 WILDCARD ROUTE HIT`);
+  console.log(`🌟 Page param: "${page}"`);
+  console.log(`🌟 Original URL: "${req.originalUrl}"`);
+  console.log(`🌟 Method: ${req.method}`);
+  
+  // If this is ANY API path, it should NOT be here!
+  if (req.originalUrl.startsWith('/api')) {
+    console.log(`🚨 CRITICAL ERROR: Wildcard caught API request!`);
+    console.log(`🚨 This means API routes are not being matched properly!`);
+    return res.status(500).json({ 
+      error: 'Server routing error - API request reached wildcard route',
+      url: req.originalUrl,
+      method: req.method
+    });
+  }
+  
+  // Also check just 'api' for safety
+  if (page === 'api') {
+    console.log(`⚠️ Direct /api access blocked by wildcard`);
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
+  
+  if (protectedPages.includes(page)) {
+    if (!isAuthenticated(req)) {
+      return res.redirect('/');
     }
-
-    // UPDATE: Edit match result
-    updateMatchResult(matchId, updateData) {
-        for (let [tournamentId, matches] of this.matchResults) {
-            const matchIndex = matches.findIndex(m => m.id === matchId);
-            if (matchIndex !== -1) {
-                const updatedMatch = {
-                    ...matches[matchIndex],
-                    ...updateData,
-                    winner: this.determineWinner(updateData.score1, updateData.score2, updateData.player1, updateData.player2),
-                    updatedAt: new Date().toISOString()
-                };
-                matches[matchIndex] = updatedMatch;
-                this.matchResults.set(tournamentId, matches);
-                return updatedMatch;
-            }
-        }
-        return null;
+  }
+  
+  const filePath = path.join(__dirname, '../../src/', page);
+  res.sendFile(filePath, err => {
+    if (err) {
+      res.status(404).send('Page not found');
     }
-
-    // DELETE: Remove match result
-    removeMatchResult(matchId) {
-        for (let [tournamentId, matches] of this.matchResults) {
-            const matchIndex = matches.findIndex(m => m.id === matchId);
-            if (matchIndex !== -1) {
-                const removedMatch = matches[matchIndex];
-                matches.splice(matchIndex, 1);
-                this.matchResults.set(tournamentId, matches);
-                return removedMatch;
-            }
-        }
-        return null;
-    }
-
-    // Helper: Determine winner based on scores
-    determineWinner(score1, score2, player1, player2) {
-        const s1 = parseInt(score1);
-        const s2 = parseInt(score2);
-        
-        if (s1 > s2) return player1;
-        if (s2 > s1) return player2;
-        return 'Draw';
-    }
-
-    // UI: Show match results modal
-    showMatchResultsModal(tournamentId) {
-        this.currentTournamentId = tournamentId;
-        const matches = this.getMatchResults(tournamentId);
-        const modal = this.createMatchResultsModal(matches, tournamentId);
-        document.body.appendChild(modal);
-    }
-
-    // UI: Show report match modal
-    showReportMatchModal() {
-        const modal = this.createReportMatchModal();
-        document.body.appendChild(modal);
-    }
-
-    createMatchResultsModal(matches, tournamentId) {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay match-results-modal';
-        
-        const matchesList = matches.map(match => `
-            <div class="match-item">
-                <div class="match-info">
-                    <div class="match-players">
-                        <span class="player ${match.winner === match.player1 ? 'winner' : ''}">${match.player1}</span>
-                        <span class="vs">vs</span>
-                        <span class="player ${match.winner === match.player2 ? 'winner' : ''}">${match.player2}</span>
-                    </div>
-                    <div class="match-score">
-                        <span class="score">${match.score1} - ${match.score2}</span>
-                        ${match.winner !== 'Draw' ? `<span class="winner-badge">Winner: ${match.winner}</span>` : '<span class="draw-badge">Draw</span>'}
-                    </div>
-                    <div class="match-meta">
-                        <span class="match-date">Date: ${new Date(match.matchDate).toLocaleDateString()}</span>
-                        <span class="reported-by">Reported by: ${match.reportedBy}</span>
-                        <span class="status">Status: ${match.status}</span>
-                    </div>
-                </div>
-                <div class="match-actions">
-                    <button class="btn-edit edit-match-btn" data-match-id="${match.id}">Edit</button>
-                    <button class="btn-delete delete-match-btn" data-match-id="${match.id}">Delete</button>
-                </div>
-            </div>
-        `).join('');
-
-        modal.innerHTML = `
-            <div class="modal-content large">
-                <div class="modal-header">
-                    <h2>Match Results - Tournament ${tournamentId}</h2>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <div class="modal-actions">
-                    <button class="btn-primary report-match-btn">Report New Match</button>
-                </div>
-                <div class="matches-list">
-                    ${matches.length > 0 ? matchesList : '<p class="no-matches">No match results reported yet.</p>'}
-                </div>
-            </div>
-        `;
-        return modal;
-    }
-
-    createReportMatchModal() {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Report Match Result</h2>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <form id="report-match-form" class="match-form">
-                    <div class="form-group">
-                        <label for="player1">Player 1:</label>
-                        <input type="text" id="player1" name="player1" required placeholder="Enter player 1 name">
-                    </div>
-                    <div class="form-group">
-                        <label for="score1">Player 1 Score:</label>
-                        <input type="number" id="score1" name="score1" required min="0" placeholder="0">
-                    </div>
-                    <div class="form-group">
-                        <label for="player2">Player 2:</label>
-                        <input type="text" id="player2" name="player2" required placeholder="Enter player 2 name">
-                    </div>
-                    <div class="form-group">
-                        <label for="score2">Player 2 Score:</label>
-                        <input type="number" id="score2" name="score2" required min="0" placeholder="0">
-                    </div>
-                    <div class="form-group">
-                        <label for="match-date">Match Date:</label>
-                        <input type="date" id="match-date" name="date" required value="${new Date().toISOString().split('T')[0]}">
-                    </div>
-                    <div class="form-group">
-                        <label for="reported-by">Reported By:</label>
-                        <input type="text" id="reported-by" name="reportedBy" value="Admin" placeholder="Admin/Referee">
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" class="btn-secondary close-modal">Cancel</button>
-                        <button type="submit" class="btn-primary">Report Match</button>
-                    </div>
-                </form>
-            </div>
-        `;
-        return modal;
-    }
-
-    createEditMatchModal(match) {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Edit Match Result</h2>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <form id="edit-match-form" class="match-form">
-                    <input type="hidden" name="matchId" value="${match.id}">
-                    <div class="form-group">
-                        <label for="edit-player1">Player 1:</label>
-                        <input type="text" id="edit-player1" name="player1" required value="${match.player1}">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-score1">Player 1 Score:</label>
-                        <input type="number" id="edit-score1" name="score1" required min="0" value="${match.score1}">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-player2">Player 2:</label>
-                        <input type="text" id="edit-player2" name="player2" required value="${match.player2}">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-score2">Player 2 Score:</label>
-                        <input type="number" id="edit-score2" name="score2" required min="0" value="${match.score2}">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-match-date">Match Date:</label>
-                        <input type="date" id="edit-match-date" name="date" required value="${match.matchDate}">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-reported-by">Reported By:</label>
-                        <input type="text" id="edit-reported-by" name="reportedBy" value="${match.reportedBy}">
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" class="btn-secondary close-modal">Cancel</button>
-                        <button type="submit" class="btn-primary">Update Match</button>
-                    </div>
-                </form>
-            </div>
-        `;
-        return modal;
-    }
-
-    handleReportMatch(form) {
-        const formData = new FormData(form);
-        const matchData = {
-            player1: formData.get('player1'),
-            player2: formData.get('player2'),
-            score1: formData.get('score1'),
-            score2: formData.get('score2'),
-            date: formData.get('date'),
-            reportedBy: formData.get('reportedBy')
-        };
-
-        const newMatch = this.reportMatchResult(this.currentTournamentId, matchData);
-        if (newMatch) {
-            alert('Match result reported successfully!');
-            this.closeModal();
-            // Refresh the match results modal
-            this.showMatchResultsModal(this.currentTournamentId);
-        }
-    }
-
-    handleEditMatch(form) {
-        const formData = new FormData(form);
-        const matchId = formData.get('matchId');
-        const updateData = {
-            player1: formData.get('player1'),
-            player2: formData.get('player2'),
-            score1: parseInt(formData.get('score1')),
-            score2: parseInt(formData.get('score2')),
-            matchDate: formData.get('date'),
-            reportedBy: formData.get('reportedBy')
-        };
-
-        const updatedMatch = this.updateMatchResult(matchId, updateData);
-        if (updatedMatch) {
-            alert('Match result updated successfully!');
-            this.closeModal();
-            // Refresh the match results modal
-            this.showMatchResultsModal(this.currentTournamentId);
-        }
-    }
-
-    editMatchResult(matchId) {
-        const match = this.getMatchResult(matchId);
-        if (match) {
-            this.closeModal();
-            const editModal = this.createEditMatchModal(match);
-            document.body.appendChild(editModal);
-        }
-    }
-
-    deleteMatchResult(matchId) {
-        if (confirm('Are you sure you want to delete this match result? This action cannot be undone.')) {
-            const removedMatch = this.removeMatchResult(matchId);
-            if (removedMatch) {
-                alert('Match result deleted successfully!');
-                // Refresh the match results modal
-                this.showMatchResultsModal(this.currentTournamentId);
-            }
-        }
-    }
-
-    closeModal() {
-        const modal = document.querySelector('.modal-overlay');
-        if (modal) {
-            modal.remove();
-        }
-    }
-
-    loadSampleData() {
-        // Load sample match results for demonstration
-        this.reportMatchResult('valorant-masters', {
-            player1: 'ProGamer123',
-            player2: 'SniperKing',
-            score1: 16,
-            score2: 12,
-            date: '2025-07-10',
-            reportedBy: 'Tournament Admin'
-        });
-
-        this.reportMatchResult('valorant-masters', {
-            player1: 'ShadowNinja',
-            player2: 'FireStorm',
-            score1: 14,
-            score2: 16,
-            date: '2025-07-09',
-            reportedBy: 'Referee Bot'
-        });
-
-        this.reportMatchResult('rocket-league-cup', {
-            player1: 'RocketMan',
-            player2: 'SkyDriver',
-            score1: 3,
-            score2: 1,
-            date: '2025-07-08',
-            reportedBy: 'Admin'
-        });
-    }
-}
-
-// Tournament Discussions CRUD System
-class TournamentDiscussionsCRUD {
-    constructor() {
-        this.discussions = new Map(); // Store discussions by tournament ID
-        this.currentTournamentId = null;
-        this.currentUserId = 1; // Mock current user ID
-        this.currentUserRole = 'user'; // 'user', 'mod', 'admin'
-        this.init();
-    }
-
-    init() {
-        this.setupEventListeners();
-        this.loadSampleData();
-    }
-
-    setupEventListeners() {
-        document.addEventListener('click', (e) => {
-            // View Discussions button
-            if (e.target.classList.contains('view-discussions-btn')) {
-                e.preventDefault();
-                const tournamentId = e.target.dataset.tournamentId;
-                this.showDiscussionsModal(tournamentId);
-            }
-
-            // Create new discussion
-            if (e.target.classList.contains('create-discussion-btn')) {
-                e.preventDefault();
-                this.showCreateDiscussionModal();
-            }
-
-            // Edit discussion
-            if (e.target.classList.contains('edit-discussion-btn')) {
-                const discussionId = e.target.dataset.discussionId;
-                this.editDiscussion(discussionId);
-            }
-
-            // Delete discussion
-            if (e.target.classList.contains('delete-discussion-btn')) {
-                const discussionId = e.target.dataset.discussionId;
-                this.deleteDiscussion(discussionId);
-            }
-
-            // View discussion details
-            if (e.target.classList.contains('view-discussion-btn')) {
-                const discussionId = e.target.dataset.discussionId;
-                this.viewDiscussionDetails(discussionId);
-            }
-
-            // Reply to discussion
-            if (e.target.classList.contains('reply-discussion-btn')) {
-                const discussionId = e.target.dataset.discussionId;
-                this.showReplyModal(discussionId);
-            }
-
-            // Close modal
-            if (e.target.classList.contains('close-modal') || e.target.classList.contains('modal-overlay')) {
-                this.closeModal();
-            }
-        });
-
-        // Form submissions
-        document.addEventListener('submit', (e) => {
-            if (e.target.id === 'create-discussion-form') {
-                e.preventDefault();
-                this.handleCreateDiscussion(e.target);
-            }
-
-            if (e.target.id === 'edit-discussion-form') {
-                e.preventDefault();
-                this.handleEditDiscussion(e.target);
-            }
-
-            if (e.target.id === 'reply-discussion-form') {
-                e.preventDefault();
-                this.handleReplyToDiscussion(e.target);
-            }
-        });
-    }
-
-    // CREATE: Start new discussion thread
-    createDiscussion(tournamentId, discussionData) {
-        if (!this.discussions.has(tournamentId)) {
-            this.discussions.set(tournamentId, []);
-        }
-
-        const discussions = this.discussions.get(tournamentId);
-        
-        const newDiscussion = {
-            id: Date.now().toString(),
-            tournamentId: tournamentId,
-            title: discussionData.title,
-            content: discussionData.content,
-            authorId: discussionData.authorId || this.currentUserId,
-            authorName: discussionData.authorName || 'Current User',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            replies: [],
-            isSticky: false,
-            isLocked: false,
-            views: 0
-        };
-
-        discussions.unshift(newDiscussion); // Add to beginning for newest first
-        this.discussions.set(tournamentId, discussions);
-        
-        console.log('Discussion created:', newDiscussion);
-        return newDiscussion;
-    }
-
-    // READ: Get discussions for a tournament
-    getDiscussions(tournamentId) {
-        return this.discussions.get(tournamentId) || [];
-    }
-
-    // READ: Get specific discussion
-    getDiscussion(discussionId) {
-        for (let [tournamentId, discussions] of this.discussions) {
-            const discussion = discussions.find(d => d.id === discussionId);
-            if (discussion) return discussion;
-        }
-        return null;
-    }
-
-    // UPDATE: Edit discussion (author or mod only)
-    updateDiscussion(discussionId, updateData) {
-        const discussion = this.getDiscussion(discussionId);
-        if (!discussion) return null;
-
-        // Check permissions
-        if (!this.canEditDiscussion(discussion)) {
-            alert('You do not have permission to edit this discussion.');
-            return null;
-        }
-
-        for (let [tournamentId, discussions] of this.discussions) {
-            const discussionIndex = discussions.findIndex(d => d.id === discussionId);
-            if (discussionIndex !== -1) {
-                const updatedDiscussion = {
-                    ...discussions[discussionIndex],
-                    ...updateData,
-                    updatedAt: new Date().toISOString()
-                };
-                discussions[discussionIndex] = updatedDiscussion;
-                this.discussions.set(tournamentId, discussions);
-                return updatedDiscussion;
-            }
-        }
-        return null;
-    }
-
-    // DELETE: Remove discussion thread (author or mod only)
-    removeDiscussion(discussionId) {
-        const discussion = this.getDiscussion(discussionId);
-        if (!discussion) return null;
-
-        // Check permissions
-        if (!this.canDeleteDiscussion(discussion)) {
-            alert('You do not have permission to delete this discussion.');
-            return null;
-        }
-
-        for (let [tournamentId, discussions] of this.discussions) {
-            const discussionIndex = discussions.findIndex(d => d.id === discussionId);
-            if (discussionIndex !== -1) {
-                const removedDiscussion = discussions[discussionIndex];
-                discussions.splice(discussionIndex, 1);
-                this.discussions.set(tournamentId, discussions);
-                return removedDiscussion;
-            }
-        }
-        return null;
-    }
-
-    // Helper: Check if user can edit discussion
-    canEditDiscussion(discussion) {
-        return discussion.authorId === this.currentUserId || 
-               this.currentUserRole === 'mod' || 
-               this.currentUserRole === 'admin';
-    }
-
-    // Helper: Check if user can delete discussion
-    canDeleteDiscussion(discussion) {
-        return discussion.authorId === this.currentUserId || 
-               this.currentUserRole === 'mod' || 
-               this.currentUserRole === 'admin';
-    }
-
-    // UI: Show discussions modal
-    showDiscussionsModal(tournamentId) {
-        this.currentTournamentId = tournamentId;
-        const discussions = this.getDiscussions(tournamentId);
-        const modal = this.createDiscussionsModal(discussions, tournamentId);
-        document.body.appendChild(modal);
-    }
-
-    // UI: Show create discussion modal
-    showCreateDiscussionModal() {
-        const modal = this.createDiscussionFormModal();
-        document.body.appendChild(modal);
-    }
-
-    createDiscussionsModal(discussions, tournamentId) {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay discussions-modal';
-        
-        const discussionsList = discussions.map(discussion => {
-            const canEdit = this.canEditDiscussion(discussion);
-            const canDelete = this.canDeleteDiscussion(discussion);
-            
-            return `
-                <div class="discussion-item">
-                    <div class="discussion-info">
-                        <div class="discussion-header">
-                            <h4 class="discussion-title">${discussion.title}</h4>
-                            ${discussion.isSticky ? '<span class="sticky-badge">📌 Sticky</span>' : ''}
-                            ${discussion.isLocked ? '<span class="locked-badge">🔒 Locked</span>' : ''}
-                        </div>
-                        <div class="discussion-content">${discussion.content.substring(0, 150)}${discussion.content.length > 150 ? '...' : ''}</div>
-                        <div class="discussion-meta">
-                            <span class="author">By: ${discussion.authorName}</span>
-                            <span class="created-date">Created: ${new Date(discussion.createdAt).toLocaleDateString()}</span>
-                            <span class="replies-count">Replies: ${discussion.replies.length}</span>
-                            <span class="views-count">Views: ${discussion.views}</span>
-                        </div>
-                    </div>
-                    <div class="discussion-actions">
-                        <button class="btn-primary view-discussion-btn" data-discussion-id="${discussion.id}">View</button>
-                        ${canEdit ? `<button class="btn-edit edit-discussion-btn" data-discussion-id="${discussion.id}">Edit</button>` : ''}
-                        ${canDelete ? `<button class="btn-delete delete-discussion-btn" data-discussion-id="${discussion.id}">Delete</button>` : ''}
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        modal.innerHTML = `
-            <div class="modal-content large">
-                <div class="modal-header">
-                    <h2>Tournament Discussions - ${tournamentId}</h2>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <div class="modal-actions">
-                    <button class="btn-primary create-discussion-btn">Start New Discussion</button>
-                </div>
-                <div class="discussions-list">
-                    ${discussions.length > 0 ? discussionsList : '<p class="no-discussions">No discussions yet. Start the conversation!</p>'}
-                </div>
-            </div>
-        `;
-        return modal;
-    }
-
-    createDiscussionFormModal(discussion = null) {
-        const isEdit = discussion !== null;
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>${isEdit ? 'Edit Discussion' : 'Start New Discussion'}</h2>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <form id="${isEdit ? 'edit-discussion-form' : 'create-discussion-form'}" class="discussion-form">
-                    ${isEdit ? `<input type="hidden" name="discussionId" value="${discussion.id}">` : ''}
-                    <div class="form-group">
-                        <label for="discussion-title">Discussion Title:</label>
-                        <input type="text" id="discussion-title" name="title" required 
-                               placeholder="Enter discussion title..." 
-                               value="${isEdit ? discussion.title : ''}" maxlength="100">
-                    </div>
-                    <div class="form-group">
-                        <label for="discussion-content">Content:</label>
-                        <textarea id="discussion-content" name="content" required 
-                                  placeholder="Share your thoughts, questions, or start a conversation..." 
-                                  rows="6">${isEdit ? discussion.content : ''}</textarea>
-                    </div>
-                    ${this.currentUserRole === 'mod' || this.currentUserRole === 'admin' ? `
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" name="isSticky" ${isEdit && discussion.isSticky ? 'checked' : ''}>
-                                Pin this discussion (Sticky)
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" name="isLocked" ${isEdit && discussion.isLocked ? 'checked' : ''}>
-                                Lock discussion (No new replies)
-                            </label>
-                        </div>
-                    ` : ''}
-                    <div class="form-actions">
-                        <button type="button" class="btn-secondary close-modal">Cancel</button>
-                        <button type="submit" class="btn-primary">${isEdit ? 'Update Discussion' : 'Start Discussion'}</button>
-                    </div>
-                </form>
-            </div>
-        `;
-        return modal;
-    }
-
-    createDiscussionDetailsModal(discussion) {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay discussion-details-modal';
-        
-        const canEdit = this.canEditDiscussion(discussion);
-        const canDelete = this.canDeleteDiscussion(discussion);
-        
-        modal.innerHTML = `
-            <div class="modal-content large">
-                <div class="modal-header">
-                    <h2>${discussion.title}</h2>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <div class="discussion-full-content">
-                    <div class="discussion-header-full">
-                        ${discussion.isSticky ? '<span class="sticky-badge">📌 Sticky</span>' : ''}
-                        ${discussion.isLocked ? '<span class="locked-badge">🔒 Locked</span>' : ''}
-                    </div>
-                    <div class="discussion-content-full">${discussion.content}</div>
-                    <div class="discussion-meta-full">
-                        <span class="author">Started by: <strong>${discussion.authorName}</strong></span>
-                        <span class="created-date">Created: ${new Date(discussion.createdAt).toLocaleString()}</span>
-                        ${discussion.updatedAt !== discussion.createdAt ? `<span class="updated-date">Last updated: ${new Date(discussion.updatedAt).toLocaleString()}</span>` : ''}
-                        <span class="views-count">Views: ${discussion.views + 1}</span>
-                    </div>
-                    <div class="discussion-actions-full">
-                        ${canEdit ? `<button class="btn-edit edit-discussion-btn" data-discussion-id="${discussion.id}">Edit</button>` : ''}
-                        ${canDelete ? `<button class="btn-delete delete-discussion-btn" data-discussion-id="${discussion.id}">Delete</button>` : ''}
-                        ${discussion.authorId !== this.currentUserId ? `<button class="btn-primary reply-discussion-btn" data-discussion-id="${discussion.id}">Reply</button>` : ''}
-                    </div>
-                    <div class="replies-section">
-                        <h3>Replies (${discussion.replies.length})</h3>
-                        <div class="replies-list">
-                            ${discussion.replies.length > 0 ? 
-                                discussion.replies.map(reply => `
-                                    <div class="reply-item">
-                                        <div class="reply-content">${reply.content}</div>
-                                        <div class="reply-meta">
-                                            <span>By: ${reply.authorName}</span>
-                                            <span>${new Date(reply.createdAt).toLocaleString()}</span>
-                                        </div>
-                                    </div>
-                                `).join('') : 
-                                '<p class="no-replies">No replies yet. Be the first to reply!</p>'
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Increment views
-        discussion.views++;
-        
-        return modal;
-    }
-
-    handleCreateDiscussion(form) {
-        const formData = new FormData(form);
-        const discussionData = {
-            title: formData.get('title'),
-            content: formData.get('content'),
-            isSticky: formData.get('isSticky') === 'on',
-            isLocked: formData.get('isLocked') === 'on'
-        };
-
-        const newDiscussion = this.createDiscussion(this.currentTournamentId, discussionData);
-        if (newDiscussion) {
-            alert('Discussion started successfully!');
-            this.closeModal();
-            // Refresh the discussions modal
-            this.showDiscussionsModal(this.currentTournamentId);
-        }
-    }
-
-    handleEditDiscussion(form) {
-        const formData = new FormData(form);
-        const discussionId = formData.get('discussionId');
-        const updateData = {
-            title: formData.get('title'),
-            content: formData.get('content'),
-            isSticky: formData.get('isSticky') === 'on',
-            isLocked: formData.get('isLocked') === 'on'
-        };
-
-        const updatedDiscussion = this.updateDiscussion(discussionId, updateData);
-        if (updatedDiscussion) {
-            alert('Discussion updated successfully!');
-            this.closeModal();
-            // Refresh the discussions modal
-            this.showDiscussionsModal(this.currentTournamentId);
-        }
-    }
-
-    editDiscussion(discussionId) {
-        const discussion = this.getDiscussion(discussionId);
-        if (discussion) {
-            this.closeModal();
-            const editModal = this.createDiscussionFormModal(discussion);
-            document.body.appendChild(editModal);
-        }
-    }
-
-    deleteDiscussion(discussionId) {
-        if (confirm('Are you sure you want to delete this discussion? This action cannot be undone and will remove all replies.')) {
-            const removedDiscussion = this.removeDiscussion(discussionId);
-            if (removedDiscussion) {
-                alert('Discussion deleted successfully!');
-                // Refresh the discussions modal
-                this.showDiscussionsModal(this.currentTournamentId);
-            }
-        }
-    }
-
-    viewDiscussionDetails(discussionId) {
-        const discussion = this.getDiscussion(discussionId);
-        if (discussion) {
-            this.closeModal();
-            const detailsModal = this.createDiscussionDetailsModal(discussion);
-            document.body.appendChild(detailsModal);
-        }
-    }
-
-    closeModal() {
-        const modal = document.querySelector('.modal-overlay');
-        if (modal) {
-            modal.remove();
-        }
-    }
-
-    loadSampleData() {
-        // Load sample discussions for demonstration
-        this.createDiscussion('valorant-masters', {
-            title: 'Team Strategy Discussion',
-            content: 'What are the best strategies for the upcoming Valorant Masters tournament? Share your insights and team compositions here!',
-            authorName: 'TacticsPro',
-            authorId: 2
-        });
-
-        this.createDiscussion('valorant-masters', {
-            title: 'Looking for Team Members',
-            content: 'Hi everyone! I\'m looking for skilled players to form a team for this tournament. Must have good communication and be available for practice sessions.',
-            authorName: 'TeamCaptain',
-            authorId: 3
-        });
-
-        this.createDiscussion('rocket-league-cup', {
-            title: 'Car Builds and Customization',
-            content: 'Let\'s discuss the best car setups for competitive play. What\'s your favorite car and boost combination?',
-            authorName: 'RocketExpert',
-            authorId: 4
-        });
-
-        // Add some sample replies
-        const discussions = this.getDiscussions('valorant-masters');
-        if (discussions.length > 0) {
-            discussions[0].replies.push({
-                id: 'reply1',
-                content: 'Great topic! I think Sage and Sova are essential for any competitive team.',
-                authorName: 'EliteTactician',
-                authorId: 5,
-                createdAt: new Date(Date.now() - 3600000).toISOString() // 1 hour ago
-            });
-        }
-    }
-
-    // UI: Show reply modal
-    showReplyModal(discussionId) {
-        const modal = this.createReplyFormModal(discussionId);
-        document.body.appendChild(modal);
-    }
-
-    // UI: Create reply form modal
-    createReplyFormModal(discussionId) {
-        const discussion = this.getDiscussion(discussionId);
-        if (!discussion) return;
-
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Reply to: ${discussion.title}</h2>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <form id="reply-discussion-form" class="discussion-form">
-                    <input type="hidden" name="discussionId" value="${discussionId}">
-                    <div class="form-group">
-                        <label for="reply-content">Your Reply:</label>
-                        <textarea id="reply-content" name="content" rows="5" placeholder="Write your reply here..." required></textarea>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn-primary">Post Reply</button>
-                        <button type="button" class="btn-secondary close-modal">Cancel</button>
-                    </div>
-                </form>
-            </div>
-        `;
-        return modal;
-    }
-
-    // Handle reply form submission
-    handleReplyToDiscussion(form) {
-        const formData = new FormData(form);
-        const discussionId = formData.get('discussionId');
-        const content = formData.get('content');
-
-        if (!discussionId || !content.trim()) {
-            alert('Please provide a reply content.');
-            return;
-        }
-
-        const replyData = {
-            content: content.trim(),
-            authorId: this.currentUserId,
-            authorName: 'Current User'
-        };
-
-        if (this.addReplyToDiscussion(discussionId, replyData)) {
-            this.closeModal();
-            // Refresh the discussion details modal to show the new reply
-            this.viewDiscussionDetails(discussionId);
-        }
-    }
-
-    // Add reply to discussion
-    addReplyToDiscussion(discussionId, replyData) {
-        const discussion = this.getDiscussion(discussionId);
-        if (!discussion) {
-            alert('Discussion not found.');
-            return false;
-        }
-
-        if (discussion.isLocked && this.currentUserRole !== 'mod' && this.currentUserRole !== 'admin') {
-            alert('This discussion is locked. Only moderators can reply.');
-            return false;
-        }
-
-        const newReply = {
-            id: Date.now().toString(),
-            content: replyData.content,
-            authorId: replyData.authorId,
-            authorName: replyData.authorName,
-            createdAt: new Date().toISOString()
-        };
-
-        discussion.replies.push(newReply);
-        
-        console.log('Reply added:', newReply);
-        return true;
-    }
-}
-
-// Initialize all CRUD systems when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    window.tournamentCRUD = new TournamentParticipantsCRUD();
-    window.userConnectionsCRUD = new UserConnectionsCRUD();
-    window.matchResultsCRUD = new MatchResultsCRUD();
-    window.tournamentDiscussionsCRUD = new TournamentDiscussionsCRUD();
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`======================================`);
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`📅 Started at: ${new Date().toISOString()}`);
+  console.log(`======================================`);
+  console.log(`📋 Registered API Routes:`);
+  console.log(`GET  /api/test`);
+  console.log(`PUT  /api/simple-test`);
+  console.log(`GET  /api/comments/:commentId`);
+  console.log(`PUT  /api/comments/:commentId`);
+  console.log(`DELETE /api/comments/:commentId`);
+  console.log(`GET  /api/tournaments`);
+  console.log(`POST /api/tournaments`);
+  console.log(`GET  /api/tournaments/:id`);
+  console.log(`PUT  /api/tournaments/:id`);
+  console.log(`DELETE /api/tournaments/:id`);
+  console.log(`======================================`);
+  // Update counts on server start to ensure accuracy
+  updatePostCounts();
 });
