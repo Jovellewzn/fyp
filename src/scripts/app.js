@@ -1,61 +1,96 @@
-// Main JS for GameVibe Arena
-console.log('GameVibe Arena loaded');
+// Main JS for GameVibe Arena - Database Connected Version
+console.log('GameVibe Arena loaded with Database Connection');
 
-// Tournament Participants CRUD System
+// API Configuration
+const API_BASE = 'http://localhost:5000/api';
+
+// Utility function for API calls
+async function apiCall(endpoint, options = {}) {
+    try {
+        console.log('🌐 API Call:', `${API_BASE}${endpoint}`, options);
+        
+        const response = await fetch(`${API_BASE}${endpoint}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            },
+            ...options
+        });
+
+        console.log('📡 API Response status:', response.status);
+        
+        const data = await response.json();
+        console.log('📄 API Response data:', data);
+        
+        if (!response.ok) {
+            throw new Error(data.error || `API call failed with status ${response.status}`);
+        }
+        
+        return data;
+    } catch (error) {
+        console.error('❌ API Error details:', {
+            endpoint: `${API_BASE}${endpoint}`,
+            error: error.message,
+            stack: error.stack
+        });
+        
+        // Provide more specific error messages
+        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+            throw new Error('Cannot connect to server. Please check if the backend is running on http://localhost:5000');
+        } else if (error.message.includes('CORS')) {
+            throw new Error('Cross-origin request blocked. Please check server CORS settings.');
+        } else {
+            throw error;
+        }
+    }
+}
+
+// Tournament Participants CRUD System - Database Connected
 class TournamentParticipantsCRUD {
     constructor() {
-        this.participants = new Map(); // Store participants by tournament ID
         this.currentTournamentId = null;
         this.init();
     }
 
     init() {
-        // Load initial data and set up event listeners
         this.setupEventListeners();
-        this.loadSampleData();
     }
 
     setupEventListeners() {
-        // Add event listeners for View Details buttons
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('view-details-btn') || 
                 (e.target.closest('.tournament-btn') && e.target.textContent === 'View Details')) {
                 e.preventDefault();
                 const tournamentCard = e.target.closest('.tournament-card');
-                const tournamentId = tournamentCard.dataset.tournamentId || 
-                    this.getTournamentIdFromCard(tournamentCard);
+                const tournamentId = this.getTournamentId(tournamentCard);
+                console.log('🔍 DEBUG: View Details clicked for tournament ID:', tournamentId);
                 this.showParticipantsModal(tournamentId);
             }
 
-            // Join tournament button
             if (e.target.classList.contains('join-btn') || 
                 (e.target.textContent === 'Join' && e.target.classList.contains('tournament-btn'))) {
                 e.preventDefault();
                 const tournamentCard = e.target.closest('.tournament-card');
-                const tournamentId = tournamentCard.dataset.tournamentId || 
-                    this.getTournamentIdFromCard(tournamentCard);
+                const tournamentId = this.getTournamentId(tournamentCard);
+                console.log('🔍 DEBUG: Join clicked for tournament ID:', tournamentId);
                 this.showJoinModal(tournamentId);
             }
 
-            // Close modal
             if (e.target.classList.contains('close-modal') || e.target.classList.contains('modal-overlay')) {
                 this.closeModal();
             }
 
-            // Edit participant
             if (e.target.classList.contains('edit-participant-btn')) {
                 const participantId = e.target.dataset.participantId;
                 this.editParticipant(participantId);
             }
 
-            // Delete participant
             if (e.target.classList.contains('delete-participant-btn')) {
                 const participantId = e.target.dataset.participantId;
                 this.deleteParticipant(participantId);
             }
         });
 
-        // Form submissions
         document.addEventListener('submit', (e) => {
             if (e.target.id === 'join-tournament-form') {
                 e.preventDefault();
@@ -69,84 +104,127 @@ class TournamentParticipantsCRUD {
         });
     }
 
-    getTournamentIdFromCard(card) {
-        // Extract tournament ID from card title or create a unique ID
-        const title = card.querySelector('.tournament-title').textContent.trim();
-        return title.toLowerCase().replace(/\s+/g, '-');
+    getTournamentId(card) {
+        // Always prioritize the data attribute from HTML
+        const dataId = card.dataset.tournamentId;
+        if (dataId) {
+            console.log('✅ DEBUG: Using tournament ID from data attribute:', dataId);
+            console.log('🔍 DEBUG: Data attribute type:', typeof dataId);
+            return dataId;
+        }
+        
+        // Fallback (this should never happen with your HTML structure)
+        const title = card.querySelector('.tournament-title');
+        if (title) {
+            const titleText = title.textContent.trim();
+            console.error('⚠️ WARNING: No data-tournament-id found! Using title fallback.');
+            console.error('⚠️ This might cause errors. Please check your HTML.');
+            console.log('🔍 Card HTML:', card.outerHTML);
+            
+            // For emergency fallback, let's use title to ID mapping
+            const titleToId = {
+                'Valorant Masters': '1',
+                'Rocket League Cup': '2', 
+                'Apex Legends Showdown': '3'
+            };
+            
+            const mappedId = titleToId[titleText];
+            if (mappedId) {
+                console.log('🔍 DEBUG: Mapped title to ID:', titleText, '->', mappedId);
+                return mappedId;
+            }
+            
+            // Last resort: generate slug
+            const generatedId = titleText.toLowerCase().replace(/\s+/g, '-');
+            console.error('❌ WARNING: Using generated slug (this will likely fail):', generatedId);
+            return generatedId;
+        }
+        
+        console.error('❌ Could not determine tournament ID from card:', card);
+        return null;
     }
 
-    // CREATE: Join tournament
-    joinTournament(tournamentId, userData) {
-        if (!this.participants.has(tournamentId)) {
-            this.participants.set(tournamentId, []);
-        }
+    getTournamentIdFromCard(card) {
+        // Deprecated - use getTournamentId instead
+        return this.getTournamentId(card);
+    }
 
-        const participants = this.participants.get(tournamentId);
-        
-        // Check if user already joined
-        const existingParticipant = participants.find(p => p.username === userData.username);
-        if (existingParticipant) {
-            alert('You have already joined this tournament!');
+    // API: Join tournament
+    async joinTournament(tournamentId, userData) {
+        try {
+            console.log('🎯 Joining tournament:', tournamentId, 'with data:', userData);
+            console.log('🔍 Tournament ID type:', typeof tournamentId);
+            console.log('🔍 Full API URL will be:', `${API_BASE}/tournaments/${tournamentId}/participants`);
+            
+            await apiCall(`/tournaments/${tournamentId}/participants`, {
+                method: 'POST',
+                body: JSON.stringify(userData)
+            });
+            
+            console.log('✅ Successfully joined tournament');
+            return true;
+        } catch (error) {
+            console.error('❌ Failed to join tournament:', error);
+            
+            // Show detailed error message to user
+            let errorMessage = `Failed to join tournament: ${error.message}`;
+            
+            if (error.message.includes('Cannot connect to server')) {
+                errorMessage += '\n\nTo fix this:\n1. Open a terminal\n2. Run: python backend_api.py\n3. Wait for "Running on http://127.0.0.1:5000"\n4. Try joining again';
+            }
+            
+            alert(errorMessage);
             return false;
         }
-
-        const newParticipant = {
-            id: Date.now().toString(),
-            tournamentId: tournamentId,
-            username: userData.username,
-            teamName: userData.teamName || '',
-            registrationDate: new Date().toISOString(),
-            status: 'registered'
-        };
-
-        participants.push(newParticipant);
-        this.participants.set(tournamentId, participants);
-        
-        console.log('Participant added:', newParticipant);
-        return true;
     }
 
-    // READ: Get participants for a tournament
-    getParticipants(tournamentId) {
-        return this.participants.get(tournamentId) || [];
-    }
-
-    // UPDATE: Edit participant
-    updateParticipant(participantId, updateData) {
-        for (let [tournamentId, participants] of this.participants) {
-            const participantIndex = participants.findIndex(p => p.id === participantId);
-            if (participantIndex !== -1) {
-                participants[participantIndex] = { ...participants[participantIndex], ...updateData };
-                this.participants.set(tournamentId, participants);
-                return true;
-            }
+    // API: Get participants
+    async getParticipants(tournamentId) {
+        try {
+            return await apiCall(`/tournaments/${tournamentId}/participants`);
+        } catch (error) {
+            console.error('Failed to fetch participants:', error);
+            return [];
         }
-        return false;
     }
 
-    // DELETE: Remove participant
-    removeParticipant(participantId) {
-        for (let [tournamentId, participants] of this.participants) {
-            const participantIndex = participants.findIndex(p => p.id === participantId);
-            if (participantIndex !== -1) {
-                participants.splice(participantIndex, 1);
-                this.participants.set(tournamentId, participants);
-                return true;
-            }
+    // API: Update participant
+    async updateParticipant(participantId, updateData) {
+        try {
+            await apiCall(`/participants/${participantId}`, {
+                method: 'PUT',
+                body: JSON.stringify(updateData)
+            });
+            return true;
+        } catch (error) {
+            alert(error.message);
+            return false;
         }
-        return false;
+    }
+
+    // API: Remove participant
+    async removeParticipant(participantId) {
+        try {
+            await apiCall(`/participants/${participantId}`, {
+                method: 'DELETE'
+            });
+            return true;
+        } catch (error) {
+            alert(error.message);
+            return false;
+        }
+    }
+
+    async showParticipantsModal(tournamentId) {
+        this.currentTournamentId = tournamentId;
+        const participants = await this.getParticipants(tournamentId);
+        const modal = this.createParticipantsModal(participants);
+        document.body.appendChild(modal);
     }
 
     showJoinModal(tournamentId) {
         this.currentTournamentId = tournamentId;
         const modal = this.createJoinModal();
-        document.body.appendChild(modal);
-    }
-
-    showParticipantsModal(tournamentId) {
-        this.currentTournamentId = tournamentId;
-        const participants = this.getParticipants(tournamentId);
-        const modal = this.createParticipantsModal(participants);
         document.body.appendChild(modal);
     }
 
@@ -186,9 +264,9 @@ class TournamentParticipantsCRUD {
             <div class="participant-item">
                 <div class="participant-info">
                     <span class="participant-username">${participant.username}</span>
-                    <span class="participant-team">${participant.teamName || 'No team'}</span>
+                    <span class="participant-team">${participant.team_name || 'No team'}</span>
                     <span class="participant-status">${participant.status}</span>
-                    <span class="participant-date">${new Date(participant.registrationDate).toLocaleDateString()}</span>
+                    <span class="participant-date">${new Date(participant.registration_date).toLocaleDateString()}</span>
                 </div>
                 <div class="participant-actions">
                     <button class="btn-edit edit-participant-btn" data-participant-id="${participant.id}">Edit</button>
@@ -224,11 +302,11 @@ class TournamentParticipantsCRUD {
                     <input type="hidden" name="participantId" value="${participant.id}">
                     <div class="form-group">
                         <label for="edit-username">Username:</label>
-                        <input type="text" id="edit-username" name="username" value="${participant.username}" required>
+                        <input type="text" id="edit-username" name="username" value="${participant.username || ''}" placeholder="Enter username" required>
                     </div>
                     <div class="form-group">
                         <label for="edit-team-name">Team Name:</label>
-                        <input type="text" id="edit-team-name" name="teamName" value="${participant.teamName || ''}" placeholder="Enter team name">
+                        <input type="text" id="edit-team-name" name="teamName" value="${participant.team_name || ''}" placeholder="Enter team name">
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn-secondary close-modal">Cancel</button>
@@ -240,21 +318,21 @@ class TournamentParticipantsCRUD {
         return modal;
     }
 
-    handleJoinTournament(form) {
+    async handleJoinTournament(form) {
         const formData = new FormData(form);
         const userData = {
             username: formData.get('username'),
             teamName: formData.get('teamName')
         };
 
-        const success = this.joinTournament(this.currentTournamentId, userData);
+        const success = await this.joinTournament(this.currentTournamentId, userData);
         if (success) {
             alert('Successfully joined the tournament!');
             this.closeModal();
         }
     }
 
-    handleEditParticipant(form) {
+    async handleEditParticipant(form) {
         const formData = new FormData(form);
         const participantId = formData.get('participantId');
         const updateData = {
@@ -262,22 +340,18 @@ class TournamentParticipantsCRUD {
             teamName: formData.get('teamName')
         };
 
-        const success = this.updateParticipant(participantId, updateData);
+        const success = await this.updateParticipant(participantId, updateData);
         if (success) {
             alert('Participant updated successfully!');
             this.closeModal();
-            // Refresh the participants modal
             this.showParticipantsModal(this.currentTournamentId);
         }
     }
 
-    editParticipant(participantId) {
-        // Find the participant
-        let participant = null;
-        for (let [tournamentId, participants] of this.participants) {
-            participant = participants.find(p => p.id === participantId);
-            if (participant) break;
-        }
+    async editParticipant(participantId) {
+        // Get all participants to find the one being edited
+        const participants = await this.getParticipants(this.currentTournamentId);
+        const participant = participants.find(p => p.id == participantId);
 
         if (participant) {
             this.closeModal();
@@ -286,12 +360,11 @@ class TournamentParticipantsCRUD {
         }
     }
 
-    deleteParticipant(participantId) {
+    async deleteParticipant(participantId) {
         if (confirm('Are you sure you want to remove this participant?')) {
-            const success = this.removeParticipant(participantId);
+            const success = await this.removeParticipant(participantId);
             if (success) {
                 alert('Participant removed successfully!');
-                // Refresh the participants modal
                 this.showParticipantsModal(this.currentTournamentId);
             }
         }
@@ -303,272 +376,282 @@ class TournamentParticipantsCRUD {
             modal.remove();
         }
     }
-
-    loadSampleData() {
-        // Load some sample participants for demonstration
-        this.joinTournament('valorant-masters', { username: 'ProGamer123', teamName: 'Elite Squad' });
-        this.joinTournament('valorant-masters', { username: 'SniperKing', teamName: 'Shadow Ops' });
-        this.joinTournament('rocket-league-cup', { username: 'RocketMan', teamName: 'Flying Cars' });
-    }
 }
 
-// User Connections CRUD System
+// User Connections CRUD System - Database Connected
 class UserConnectionsCRUD {
     constructor() {
-        this.connections = new Map(); // Store connections by user ID
-        this.users = new Map(); // Store all users
         this.currentUserId = 1; // Mock current user ID
+        console.log('🚀 DEBUG: UserConnectionsCRUD initialized with current user ID:', this.currentUserId);
         this.init();
     }
 
-    init() {
+    async init() {
+        console.log('🔧 DEBUG: Setting up UserConnectionsCRUD...');
+        const serverOnline = await this.checkServerStatus();
         this.setupEventListeners();
-        this.loadSampleData();
-        this.updateConnectionsUI();
+        
+        // Only update connections UI if server is online
+        if (serverOnline) {
+            this.updateConnectionsUI();
+        } else {
+            console.log('⚠️ Server offline - skipping connections UI update');
+        }
+        console.log('✅ DEBUG: UserConnectionsCRUD setup complete');
+    }
+
+    async checkServerStatus() {
+        console.log('🌐 DEBUG: Checking server status...');
+        try {
+            const response = await apiCall('/health');
+            console.log('✅ DEBUG: Server is running:', response);
+            return true;
+        } catch (error) {
+            console.log('⚠️ DEBUG: Server appears to be offline:', error);
+            return false;
+        }
     }
 
     setupEventListeners() {
+        console.log('🎯 DEBUG: Setting up UserConnections event listeners...');
         document.addEventListener('click', (e) => {
-            // Follow/Unfollow buttons
             if (e.target.classList.contains('follow-user-btn')) {
+                console.log('🔔 DEBUG: Follow button clicked');
+                e.preventDefault();
+                e.stopPropagation();
                 const userId = parseInt(e.target.dataset.userId);
                 this.followUser(userId);
             }
 
             if (e.target.classList.contains('unfollow-user-btn')) {
+                console.log('🔔 DEBUG: Unfollow button clicked');
+                e.preventDefault();
+                e.stopPropagation();
                 const userId = parseInt(e.target.dataset.userId);
                 this.unfollowUser(userId);
             }
 
-            // Connection status updates
             if (e.target.classList.contains('accept-request-btn')) {
+                console.log('🔔 DEBUG: Accept request button clicked');
+                e.preventDefault();
+                e.stopPropagation();
                 const connectionId = e.target.dataset.connectionId;
                 this.updateConnectionStatus(connectionId, 'accepted');
             }
 
             if (e.target.classList.contains('reject-request-btn')) {
+                console.log('🔔 DEBUG: Reject request button clicked');
+                e.preventDefault();
+                e.stopPropagation();
                 const connectionId = e.target.dataset.connectionId;
                 this.updateConnectionStatus(connectionId, 'blocked');
             }
 
-            // Remove connections
             if (e.target.classList.contains('remove-connection-btn')) {
+                console.log('🔔 DEBUG: Remove connection button clicked');
+                e.preventDefault();
+                e.stopPropagation();
                 const connectionId = e.target.dataset.connectionId;
                 this.removeConnection(connectionId);
             }
 
-            // Show discover users modal
             if (e.target.classList.contains('discover-users-btn')) {
+                console.log('🔔 DEBUG: Discover users button clicked');
                 e.preventDefault();
+                e.stopPropagation();
                 this.showDiscoverUsersModal();
             }
 
-            // Close modal
             if (e.target.classList.contains('close-modal') || e.target.classList.contains('modal-overlay')) {
+                console.log('🔔 DEBUG: Close modal triggered');
                 this.closeModal();
             }
 
-            // Tab switching for connections
             if (e.target.classList.contains('connections-tab-btn')) {
+                console.log('🔔 DEBUG: Connections tab button clicked:', e.target.dataset.tab);
+                e.preventDefault();
+                e.stopPropagation();
                 this.switchConnectionsTab(e.target.dataset.tab);
             }
         });
+        console.log('✅ DEBUG: UserConnections event listeners setup complete');
     }
 
-    // CREATE: Follow a user
-    followUser(targetUserId) {
-        if (targetUserId === this.currentUserId) {
-            alert("You can't follow yourself!");
-            return false;
+    // API: Follow a user
+    async followUser(targetUserId) {
+        console.log('🚀 DEBUG: Following user', { currentUserId: this.currentUserId, targetUserId });
+        try {
+            const response = await apiCall('/users/follow', {
+                method: 'POST',
+                body: JSON.stringify({
+                    follower_id: this.currentUserId,
+                    following_id: targetUserId
+                })
+            });
+            console.log('✅ DEBUG: Follow request successful', response);
+            alert('Follow request sent successfully!');
+            this.updateConnectionsUI();
+            this.refreshDiscoverModal();
+            // Stay on friends tab after following
+            this.ensureFriendsTabActive();
+        } catch (error) {
+            console.error('❌ DEBUG: Follow request failed', error);
+            alert(`Failed to send follow request: ${error.message}`);
         }
+    }
 
-        // Check if connection already exists
-        const existingConnection = this.findConnection(this.currentUserId, targetUserId);
-        if (existingConnection) {
-            alert('Connection already exists!');
-            return false;
+    // API: Unfollow a user  
+    async unfollowUser(targetUserId) {
+        console.log('🚫 DEBUG: Unfollowing user', { currentUserId: this.currentUserId, targetUserId });
+        try {
+            const connections = await this.getUserConnections();
+            const connection = connections.following.find(f => f.following_id === targetUserId);
+            if (connection) {
+                console.log('🔍 DEBUG: Found connection to remove:', connection);
+                await this.removeConnection(connection.id);
+                // Stay on friends tab after unfollowing
+                this.ensureFriendsTabActive();
+            } else {
+                console.warn('⚠️ DEBUG: No connection found to unfollow for user ID:', targetUserId);
+            }
+        } catch (error) {
+            console.error('❌ DEBUG: Unfollow failed:', error);
+            alert(error.message);
         }
+    }
 
-        const newConnection = {
-            id: Date.now().toString(),
-            follower_id: this.currentUserId,
-            following_id: targetUserId,
-            connection_type: 'pending',
-            created_at: new Date().toISOString()
-        };
-
-        if (!this.connections.has(this.currentUserId)) {
-            this.connections.set(this.currentUserId, []);
-        }
-
-        this.connections.get(this.currentUserId).push(newConnection);
+    // API: Get user connections
+    async getUserConnections() {
+        console.log('🔍 DEBUG: Fetching user connections for user ID:', this.currentUserId);
         
-        alert('Follow request sent!');
-        this.updateConnectionsUI();
-        this.refreshDiscoverModal();
-        return true;
+        // Check if server is running first
+        try {
+            await fetch('http://localhost:5000/api/health');
+        } catch (error) {
+            console.log('⚠️ Server is offline - returning empty connections data');
+            return { followers: [], following: [], incoming_pending: [], outgoing_pending: [] };
+        }
+        
+        try {
+            const connections = await apiCall(`/users/${this.currentUserId}/connections`);
+            console.log('📄 DEBUG: User connections fetched successfully from database', connections);
+            return connections;
+        } catch (error) {
+            console.error('❌ DEBUG: Failed to fetch connections from database:', error);
+            console.log('⚠️ Server may be offline - returning empty connections data');
+            return { followers: [], following: [], incoming_pending: [], outgoing_pending: [] };
+        }
     }
 
-    // READ: Get connections for a user
-    getFollowers(userId) {
-        const followers = [];
-        for (let [otherId, connections] of this.connections) {
-            connections.forEach(conn => {
-                if (conn.following_id === userId && conn.connection_type === 'accepted') {
-                    followers.push({
-                        ...conn,
-                        user: this.users.get(conn.follower_id)
-                    });
-                }
+    // API: Update connection status
+    async updateConnectionStatus(connectionId, newStatus) {
+        console.log('🔄 DEBUG: Updating connection status', { connectionId, newStatus });
+        try {
+            const response = await apiCall(`/connections/${connectionId}/status`, {
+                method: 'PUT',
+                body: JSON.stringify({ status: newStatus })
             });
+            console.log('✅ DEBUG: Connection status updated successfully', response);
+            alert(`Connection ${newStatus} successfully!`);
+            this.updateConnectionsUI();
+            // Stay on friends tab after updating status
+            this.ensureFriendsTabActive();
+        } catch (error) {
+            console.error('❌ DEBUG: Failed to update connection status:', error);
+            alert(`Failed to ${newStatus} connection: ${error.message}`);
         }
-        return followers;
     }
 
-    getFollowing(userId) {
-        const userConnections = this.connections.get(userId) || [];
-        return userConnections
-            .filter(conn => conn.connection_type === 'accepted')
-            .map(conn => ({
-                ...conn,
-                user: this.users.get(conn.following_id)
-            }));
-    }
-
-    getPendingRequests(userId) {
-        const pending = [];
-        for (let [otherId, connections] of this.connections) {
-            connections.forEach(conn => {
-                if (conn.following_id === userId && conn.connection_type === 'pending') {
-                    pending.push({
-                        ...conn,
-                        user: this.users.get(conn.follower_id)
-                    });
-                }
-            });
-        }
-        return pending;
-    }
-
-    // Get outgoing pending requests (requests sent by the user)
-    getOutgoingPendingRequests(userId) {
-        const userConnections = this.connections.get(userId) || [];
-        return userConnections
-            .filter(conn => conn.connection_type === 'pending')
-            .map(conn => ({
-                ...conn,
-                user: this.users.get(conn.following_id)
-            }));
-    }
-
-    // UPDATE: Change connection status
-    updateConnectionStatus(connectionId, newStatus) {
-        for (let [userId, connections] of this.connections) {
-            const connectionIndex = connections.findIndex(conn => conn.id === connectionId);
-            if (connectionIndex !== -1) {
-                const connection = connections[connectionIndex];
-                connections[connectionIndex].connection_type = newStatus;
-                this.connections.set(userId, connections);
-                
-                // If accepting a follow request, automatically follow them back (mutual follow)
-                if (newStatus === 'accepted' && connection.following_id === this.currentUserId) {
-                    const followBackConnection = {
-                        id: Date.now().toString() + '_followback',
-                        follower_id: this.currentUserId,
-                        following_id: connection.follower_id,
-                        connection_type: 'accepted',
-                        created_at: new Date().toISOString()
-                    };
-                    
-                    // Check if we're not already following them back
-                    const existingFollowBack = this.findConnection(this.currentUserId, connection.follower_id);
-                    if (!existingFollowBack) {
-                        if (!this.connections.has(this.currentUserId)) {
-                            this.connections.set(this.currentUserId, []);
-                        }
-                        this.connections.get(this.currentUserId).push(followBackConnection);
-                    }
-                }
-                
-                const statusMessages = {
-                    'accepted': 'Follow request accepted! You are now following each other.',
-                    'blocked': 'User has been blocked!',
-                    'pending': 'Status updated to pending!'
-                };
-                
-                alert(statusMessages[newStatus] || 'Status updated!');
-                this.updateConnectionsUI();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // DELETE: Unfollow user
-    unfollowUser(targetUserId) {
-        const connection = this.findConnection(this.currentUserId, targetUserId);
-        if (connection) {
-            return this.removeConnection(connection.id);
-        }
-        return false;
-    }
-
-    // DELETE: Remove connection
-    removeConnection(connectionId) {
+    // API: Remove connection
+    async removeConnection(connectionId) {
+        console.log('🗑️ DEBUG: Removing connection ID:', connectionId);
         if (confirm('Are you sure you want to remove this connection?')) {
-            for (let [userId, connections] of this.connections) {
-                const connectionIndex = connections.findIndex(conn => conn.id === connectionId);
-                if (connectionIndex !== -1) {
-                    connections.splice(connectionIndex, 1);
-                    this.connections.set(userId, connections);
-                    alert('Connection removed successfully!');
-                    this.updateConnectionsUI();
-                    return true;
-                }
+            try {
+                const response = await apiCall(`/connections/${connectionId}`, {
+                    method: 'DELETE'
+                });
+                console.log('✅ DEBUG: Connection removed successfully', response);
+                alert('Connection removed successfully!');
+                this.updateConnectionsUI();
+                // Stay on friends tab after removing connection
+                this.ensureFriendsTabActive();
+            } catch (error) {
+                console.error('❌ DEBUG: Failed to remove connection:', error);
+                alert(`Failed to remove connection: ${error.message}`);
             }
+        } else {
+            console.log('ℹ️ DEBUG: User cancelled connection removal');
         }
-        return false;
     }
 
-    // Helper: Find connection between two users
-    findConnection(followerId, followingId) {
-        const userConnections = this.connections.get(followerId) || [];
-        return userConnections.find(conn => 
-            conn.follower_id === followerId && conn.following_id === followingId
-        );
+    // API: Get all users
+    async getAllUsers() {
+        console.log('👥 DEBUG: Fetching all users from database...');
+        
+        // Check if server is running first
+        try {
+            await fetch('http://localhost:5000/api/health');
+        } catch (error) {
+            console.log('⚠️ Server is offline - returning empty users list');
+            return [];
+        }
+        
+        try {
+            const users = await apiCall('/users');
+            console.log('✅ DEBUG: All users fetched successfully from database, count:', users.length);
+            return users;
+        } catch (error) {
+            console.error('❌ DEBUG: Failed to fetch users from database:', error);
+            console.log('⚠️ Server may be offline - returning empty users list');
+            return [];
+        }
     }
 
-    // Helper: Check if user is connected
-    isConnected(targetUserId) {
-        return this.findConnection(this.currentUserId, targetUserId) !== undefined;
+    async updateConnectionsUI() {
+        console.log('🔄 DEBUG: Updating connections UI...');
+        
+        // Remember which connections tab was active
+        const activeConnectionsTab = document.querySelector('.connections-tab-btn.active');
+        const activeTabName = activeConnectionsTab ? activeConnectionsTab.dataset.tab : 'followers';
+        console.log('📌 DEBUG: Current active connections tab:', activeTabName);
+        
+        const connections = await this.getUserConnections();
+        console.log('📊 DEBUG: Connections data for UI update:', connections);
+        this.updateFollowersTab(connections.followers);
+        this.updateFollowingTab(connections.following);
+        this.updatePendingTab(connections.incoming_pending, connections.outgoing_pending);
+        
+        // Ensure we stay on the Friends & Followers tab after any CRUD operation
+        this.ensureFriendsTabActive();
+        
+        // Restore the previously active connections tab
+        this.switchConnectionsTab(activeTabName);
+        
+        console.log('✅ DEBUG: UI update complete');
     }
 
-    // Helper: Get connection status
-    getConnectionStatus(targetUserId) {
-        const connection = this.findConnection(this.currentUserId, targetUserId);
-        return connection ? connection.connection_type : null;
+    ensureFriendsTabActive() {
+        console.log('🎯 DEBUG: ensureFriendsTabActive called - but keeping current tab active');
+        // Function disabled to keep default tournament tab active
+        // Original behavior: force friends tab to be active
+        // New behavior: do nothing, let user choose tabs
+        console.log('✅ DEBUG: Keeping current tab state unchanged');
     }
 
-    // UI: Update connections in profile tabs
-    updateConnectionsUI() {
-        this.updateFollowersTab();
-        this.updateFollowingTab();
-        this.updatePendingTab();
-    }
-
-    updateFollowersTab() {
-        const followers = this.getFollowers(this.currentUserId);
+    updateFollowersTab(followers) {
+        console.log('👥 DEBUG: Updating followers tab with data:', followers);
         const followersContainer = document.getElementById('followers-list');
         
         if (followersContainer) {
             if (followers.length === 0) {
                 followersContainer.innerHTML = '<p class="no-connections">No followers yet.</p>';
+                console.log('ℹ️ DEBUG: No followers to display');
             } else {
                 followersContainer.innerHTML = followers.map(follower => `
                     <li class="insta-card">
-                        <div class="user-avatar-small">${follower.user.username.charAt(0).toUpperCase()}</div>
+                        <div class="user-avatar-small">${follower.follower_username.charAt(0).toUpperCase()}</div>
                         <div class="insta-content">
-                            <span class="insta-title">${follower.user.username}</span>
+                            <span class="insta-title">${follower.follower_username}</span>
                             <span class="insta-meta">Following since ${new Date(follower.created_at).toLocaleDateString()}</span>
                         </div>
                         <div class="connection-actions">
@@ -576,50 +659,55 @@ class UserConnectionsCRUD {
                         </div>
                     </li>
                 `).join('');
+                console.log(`✅ DEBUG: Displayed ${followers.length} followers`);
             }
+        } else {
+            console.error('❌ DEBUG: followers-list container not found');
         }
     }
 
-    updateFollowingTab() {
-        const following = this.getFollowing(this.currentUserId);
+    updateFollowingTab(following) {
+        console.log('👤 DEBUG: Updating following tab with data:', following);
         const followingContainer = document.getElementById('following-list');
         
         if (followingContainer) {
             if (following.length === 0) {
                 followingContainer.innerHTML = '<p class="no-connections">Not following anyone yet.</p>';
+                console.log('ℹ️ DEBUG: No following to display');
             } else {
                 followingContainer.innerHTML = following.map(follow => `
                     <li class="insta-card">
-                        <div class="user-avatar-small">${follow.user.username.charAt(0).toUpperCase()}</div>
+                        <div class="user-avatar-small">${follow.following_username.charAt(0).toUpperCase()}</div>
                         <div class="insta-content">
-                            <span class="insta-title">${follow.user.username}</span>
+                            <span class="insta-title">${follow.following_username}</span>
                             <span class="insta-meta">Following since ${new Date(follow.created_at).toLocaleDateString()}</span>
                         </div>
                         <div class="connection-actions">
-                            <button class="btn-small btn-secondary unfollow-user-btn" data-user-id="${follow.user.id}">Unfollow</button>
+                            <button class="btn-small btn-secondary unfollow-user-btn" data-user-id="${follow.following_id}">Unfollow</button>
                         </div>
                     </li>
                 `).join('');
+                console.log(`✅ DEBUG: Displayed ${following.length} following`);
             }
+        } else {
+            console.error('❌ DEBUG: following-list container not found');
         }
     }
 
-    updatePendingTab() {
-        const incomingPending = this.getPendingRequests(this.currentUserId);
-        const outgoingPending = this.getOutgoingPendingRequests(this.currentUserId);
+    updatePendingTab(incomingPending, outgoingPending) {
+        console.log('⏳ DEBUG: Updating pending tab with data:', { incomingPending, outgoingPending });
         const pendingContainer = document.getElementById('pending-list');
         
         if (pendingContainer) {
             let content = '';
             
-            // Outgoing pending requests (people you've requested to follow)
             if (outgoingPending.length > 0) {
                 content += '<h3 style="color: #6a82fb; margin: 1rem 0 0.5rem 0; font-size: 1rem;">Requests Sent</h3>';
                 content += outgoingPending.map(request => `
                     <li class="insta-card">
-                        <div class="user-avatar-small">${request.user.username.charAt(0).toUpperCase()}</div>
+                        <div class="user-avatar-small">${request.target_username.charAt(0).toUpperCase()}</div>
                         <div class="insta-content">
-                            <span class="insta-title">${request.user.username}</span>
+                            <span class="insta-title">${request.target_username}</span>
                             <span class="insta-meta">Follow request sent ${new Date(request.created_at).toLocaleDateString()}</span>
                         </div>
                         <div class="connection-actions">
@@ -627,16 +715,16 @@ class UserConnectionsCRUD {
                         </div>
                     </li>
                 `).join('');
+                console.log(`✅ DEBUG: Displayed ${outgoingPending.length} outgoing pending requests`);
             }
             
-            // Incoming pending requests (people who want to follow you)
             if (incomingPending.length > 0) {
                 content += '<h3 style="color: #6a82fb; margin: 1rem 0 0.5rem 0; font-size: 1rem;">Requests Received</h3>';
                 content += incomingPending.map(request => `
                     <li class="insta-card">
-                        <div class="user-avatar-small">${request.user.username.charAt(0).toUpperCase()}</div>
+                        <div class="user-avatar-small">${request.requester_username.charAt(0).toUpperCase()}</div>
                         <div class="insta-content">
-                            <span class="insta-title">${request.user.username}</span>
+                            <span class="insta-title">${request.requester_username}</span>
                             <span class="insta-meta">Requested to follow ${new Date(request.created_at).toLocaleDateString()}</span>
                         </div>
                         <div class="connection-actions">
@@ -645,30 +733,35 @@ class UserConnectionsCRUD {
                         </div>
                     </li>
                 `).join('');
+                console.log(`✅ DEBUG: Displayed ${incomingPending.length} incoming pending requests`);
             }
             
             if (content === '') {
                 pendingContainer.innerHTML = '<p class="no-connections">No pending requests.</p>';
+                console.log('ℹ️ DEBUG: No pending requests to display');
             } else {
                 pendingContainer.innerHTML = content;
             }
+        } else {
+            console.error('❌ DEBUG: pending-list container not found');
         }
     }
 
-    // UI: Switch connection tabs
     switchConnectionsTab(tabName) {
-        // Hide all connection content
+        console.log('🔄 DEBUG: Switching to connections tab:', tabName);
+        
         document.querySelectorAll('.connections-content').forEach(content => {
             content.style.display = 'none';
         });
 
-        // Show selected content
         const selectedContent = document.getElementById(`${tabName}-content`);
         if (selectedContent) {
             selectedContent.style.display = 'block';
+            console.log('✅ DEBUG: Successfully showed tab content for:', tabName);
+        } else {
+            console.error('❌ DEBUG: Could not find tab content for:', tabName);
         }
 
-        // Update tab buttons
         document.querySelectorAll('.connections-tab-btn').forEach(btn => {
             btn.classList.remove('active');
         });
@@ -676,34 +769,48 @@ class UserConnectionsCRUD {
         const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
         if (activeTab) {
             activeTab.classList.add('active');
+            console.log('✅ DEBUG: Successfully activated tab button for:', tabName);
+        } else {
+            console.error('❌ DEBUG: Could not find tab button for:', tabName);
         }
     }
 
-    // UI: Show discover users modal
-    showDiscoverUsersModal() {
-        const modal = this.createDiscoverUsersModal();
+    async showDiscoverUsersModal() {
+        console.log('🌐 DEBUG: Opening discover users modal...');
+        const modal = await this.createDiscoverUsersModal();
         document.body.appendChild(modal);
+        console.log('✅ DEBUG: Discover users modal created and added to DOM');
     }
 
-    createDiscoverUsersModal() {
+    async createDiscoverUsersModal() {
+        console.log('🔍 DEBUG: Creating discover users modal...');
         const modal = document.createElement('div');
         modal.className = 'modal-overlay discover-modal';
         
-        const availableUsers = Array.from(this.users.values())
+        const users = await this.getAllUsers();
+        console.log('👥 DEBUG: All users fetched:', users);
+        const connections = await this.getUserConnections();
+        console.log('🔗 DEBUG: Current connections for filtering:', connections);
+        
+        // Create a set of connected user IDs for quick lookup
+        const connectedUserIds = new Set();
+        connections.followers.forEach(f => connectedUserIds.add(f.follower_id));
+        connections.following.forEach(f => connectedUserIds.add(f.following_id));
+        connections.incoming_pending.forEach(p => connectedUserIds.add(p.follower_id));
+        connections.outgoing_pending.forEach(p => connectedUserIds.add(p.following_id));
+        
+        console.log('🚫 DEBUG: Connected user IDs to filter out:', Array.from(connectedUserIds));
+        
+        const availableUsers = users
             .filter(user => user.id !== this.currentUserId)
             .map(user => {
-                const isConnected = this.isConnected(user.id);
-                const connectionStatus = this.getConnectionStatus(user.id);
+                const isConnected = connectedUserIds.has(user.id);
                 
                 let actionButton = '';
                 if (!isConnected) {
                     actionButton = `<button class="btn-primary follow-user-btn" data-user-id="${user.id}">Follow</button>`;
-                } else if (connectionStatus === 'pending') {
-                    actionButton = `<button class="btn-secondary" disabled>Pending</button>`;
-                } else if (connectionStatus === 'accepted') {
-                    actionButton = `<button class="btn-danger unfollow-user-btn" data-user-id="${user.id}">Unfollow</button>`;
-                } else if (connectionStatus === 'blocked') {
-                    actionButton = `<button class="btn-secondary" disabled>Blocked</button>`;
+                } else {
+                    actionButton = `<button class="btn-secondary" disabled>Connected</button>`;
                 }
 
                 return `
@@ -722,6 +829,8 @@ class UserConnectionsCRUD {
                     </div>
                 `;
             }).join('');
+
+        console.log('📋 DEBUG: Available users HTML generated, count:', users.filter(user => user.id !== this.currentUserId).length);
 
         modal.innerHTML = `
             <div class="modal-content large">
@@ -749,174 +858,52 @@ class UserConnectionsCRUD {
         const modal = document.querySelector('.modal-overlay');
         if (modal) {
             modal.remove();
+            console.log('🗑️ DEBUG: Modal closed');
+            // Ensure we stay on friends tab after closing modal
+            this.ensureFriendsTabActive();
         }
-    }
-
-    // Sample data
-    loadSampleData() {
-        // Load sample users
-        this.users.set(1, { id: 1, username: 'GamerTag123', email: 'gamer@example.com', bio: 'Current logged in user' });
-        this.users.set(2, { id: 2, username: 'ProGamer', email: 'pro@example.com', bio: 'Professional esports player' });
-        this.users.set(3, { id: 3, username: 'StreamerQueen', email: 'streamer@example.com', bio: 'Twitch streamer and content creator' });
-        this.users.set(4, { id: 4, username: 'TechNinja', email: 'tech@example.com', bio: 'Tech enthusiast and developer' });
-        this.users.set(5, { id: 5, username: 'StrategyMaster', email: 'strategy@example.com', bio: 'Strategy game expert' });
-        this.users.set(6, { id: 6, username: 'CasualGamer', email: 'casual@example.com', bio: 'Weekend warrior gamer' });
-        this.users.set(7, { id: 7, username: 'RocketAce', email: 'rocket@example.com', bio: 'Rocket League champion' });
-        this.users.set(8, { id: 8, username: 'ApexHunter', email: 'apex@example.com', bio: 'Battle royale specialist' });
-        this.users.set(9, { id: 9, username: 'ValorantSniper', email: 'valorant@example.com', bio: 'Tactical FPS master' });
-        this.users.set(10, { id: 10, username: 'MinecraftBuilder', email: 'minecraft@example.com', bio: 'Creative sandbox enthusiast' });
-        this.users.set(11, { id: 11, username: 'FightingLegend', email: 'fighting@example.com', bio: 'Fighting game tournament winner' });
-
-        // Load sample connections
-        this.connections.set(1, [
-            {
-                id: 'conn1',
-                follower_id: 1,
-                following_id: 2,
-                connection_type: 'accepted',
-                created_at: '2025-07-10T10:00:00Z'
-            }
-        ]);
-
-        this.connections.set(3, [
-            {
-                id: 'conn2',
-                follower_id: 3,
-                following_id: 1,
-                connection_type: 'accepted',
-                created_at: '2025-07-09T16:20:00Z'
-            }
-        ]);
-
-        this.connections.set(4, [
-            {
-                id: 'conn3',
-                follower_id: 4,
-                following_id: 1,
-                connection_type: 'pending',
-                created_at: '2025-07-12T08:15:00Z'
-            }
-        ]);
-
-        this.connections.set(5, [
-            {
-                id: 'conn9',
-                follower_id: 5,
-                following_id: 1,
-                connection_type: 'pending',
-                created_at: '2025-07-12T14:30:00Z'
-            }
-        ]);
-
-        this.connections.set(6, [
-            {
-                id: 'conn10',
-                follower_id: 6,
-                following_id: 1,
-                connection_type: 'pending',
-                created_at: '2025-07-12T10:45:00Z'
-            }
-        ]);
-
-        this.connections.set(7, [
-            {
-                id: 'conn4',
-                follower_id: 7,
-                following_id: 1,
-                connection_type: 'accepted',
-                created_at: '2025-07-08T14:30:00Z'
-            }
-        ]);
-
-        this.connections.set(8, [
-            {
-                id: 'conn5',
-                follower_id: 8,
-                following_id: 1,
-                connection_type: 'accepted',
-                created_at: '2025-07-07T11:45:00Z'
-            }
-        ]);
-
-        this.connections.set(9, [
-            {
-                id: 'conn6',
-                follower_id: 9,
-                following_id: 1,
-                connection_type: 'accepted',
-                created_at: '2025-07-06T19:20:00Z'
-            }
-        ]);
-
-        this.connections.set(10, [
-            {
-                id: 'conn7',
-                follower_id: 10,
-                following_id: 1,
-                connection_type: 'accepted',
-                created_at: '2025-07-05T13:10:00Z'
-            }
-        ]);
-
-        this.connections.set(11, [
-            {
-                id: 'conn8',
-                follower_id: 11,
-                following_id: 1,
-                connection_type: 'accepted',
-                created_at: '2025-07-04T16:55:00Z'
-            }
-        ]);
     }
 }
 
-// Match Results CRUD System
+// Match Results CRUD System - Database Connected
 class MatchResultsCRUD {
     constructor() {
-        this.matchResults = new Map(); // Store match results by tournament ID
         this.currentTournamentId = null;
         this.init();
     }
 
     init() {
         this.setupEventListeners();
-        this.loadSampleData();
     }
 
     setupEventListeners() {
         document.addEventListener('click', (e) => {
-            // View Match Results button
             if (e.target.classList.contains('view-match-results-btn')) {
                 e.preventDefault();
                 const tournamentId = e.target.dataset.tournamentId;
                 this.showMatchResultsModal(tournamentId);
             }
 
-            // Report new match result
             if (e.target.classList.contains('report-match-btn')) {
                 e.preventDefault();
                 this.showReportMatchModal();
             }
 
-            // Edit match result
             if (e.target.classList.contains('edit-match-btn')) {
                 const matchId = e.target.dataset.matchId;
                 this.editMatchResult(matchId);
             }
 
-            // Delete match result
             if (e.target.classList.contains('delete-match-btn')) {
                 const matchId = e.target.dataset.matchId;
                 this.deleteMatchResult(matchId);
             }
 
-            // Close modal
             if (e.target.classList.contains('close-modal') || e.target.classList.contains('modal-overlay')) {
                 this.closeModal();
             }
         });
 
-        // Form submissions
         document.addEventListener('submit', (e) => {
             if (e.target.id === 'report-match-form') {
                 e.preventDefault();
@@ -930,101 +917,64 @@ class MatchResultsCRUD {
         });
     }
 
-    // CREATE: Report new match result
-    reportMatchResult(tournamentId, matchData) {
-        if (!this.matchResults.has(tournamentId)) {
-            this.matchResults.set(tournamentId, []);
+    // API: Report match result
+    async reportMatchResult(tournamentId, matchData) {
+        try {
+            await apiCall(`/tournaments/${tournamentId}/matches`, {
+                method: 'POST',
+                body: JSON.stringify(matchData)
+            });
+            return true;
+        } catch (error) {
+            alert(error.message);
+            return false;
         }
-
-        const matches = this.matchResults.get(tournamentId);
-        
-        const newMatch = {
-            id: Date.now().toString(),
-            tournamentId: tournamentId,
-            player1: matchData.player1,
-            player2: matchData.player2,
-            score1: parseInt(matchData.score1),
-            score2: parseInt(matchData.score2),
-            winner: this.determineWinner(matchData.score1, matchData.score2, matchData.player1, matchData.player2),
-            matchDate: matchData.date || new Date().toISOString().split('T')[0],
-            reportedBy: matchData.reportedBy || 'Admin',
-            reportedAt: new Date().toISOString(),
-            status: 'confirmed'
-        };
-
-        matches.push(newMatch);
-        this.matchResults.set(tournamentId, matches);
-        
-        console.log('Match result reported:', newMatch);
-        return newMatch;
     }
 
-    // READ: Get match results for a tournament
-    getMatchResults(tournamentId) {
-        return this.matchResults.get(tournamentId) || [];
-    }
-
-    // READ: Get specific match result
-    getMatchResult(matchId) {
-        for (let [tournamentId, matches] of this.matchResults) {
-            const match = matches.find(m => m.id === matchId);
-            if (match) return match;
+    // API: Get match results
+    async getMatchResults(tournamentId) {
+        try {
+            return await apiCall(`/tournaments/${tournamentId}/matches`);
+        } catch (error) {
+            console.error('Failed to fetch matches:', error);
+            return [];
         }
-        return null;
     }
 
-    // UPDATE: Edit match result
-    updateMatchResult(matchId, updateData) {
-        for (let [tournamentId, matches] of this.matchResults) {
-            const matchIndex = matches.findIndex(m => m.id === matchId);
-            if (matchIndex !== -1) {
-                const updatedMatch = {
-                    ...matches[matchIndex],
-                    ...updateData,
-                    winner: this.determineWinner(updateData.score1, updateData.score2, updateData.player1, updateData.player2),
-                    updatedAt: new Date().toISOString()
-                };
-                matches[matchIndex] = updatedMatch;
-                this.matchResults.set(tournamentId, matches);
-                return updatedMatch;
-            }
+    // API: Update match result
+    async updateMatchResult(matchId, updateData) {
+        try {
+            await apiCall(`/matches/${matchId}`, {
+                method: 'PUT',
+                body: JSON.stringify(updateData)
+            });
+            return true;
+        } catch (error) {
+            alert(error.message);
+            return false;
         }
-        return null;
     }
 
-    // DELETE: Remove match result
-    removeMatchResult(matchId) {
-        for (let [tournamentId, matches] of this.matchResults) {
-            const matchIndex = matches.findIndex(m => m.id === matchId);
-            if (matchIndex !== -1) {
-                const removedMatch = matches[matchIndex];
-                matches.splice(matchIndex, 1);
-                this.matchResults.set(tournamentId, matches);
-                return removedMatch;
-            }
+    // API: Delete match result
+    async removeMatchResult(matchId) {
+        try {
+            await apiCall(`/matches/${matchId}`, {
+                method: 'DELETE'
+            });
+            return true;
+        } catch (error) {
+            alert(error.message);
+            return false;
         }
-        return null;
     }
 
-    // Helper: Determine winner based on scores
-    determineWinner(score1, score2, player1, player2) {
-        const s1 = parseInt(score1);
-        const s2 = parseInt(score2);
-        
-        if (s1 > s2) return player1;
-        if (s2 > s1) return player2;
-        return 'Draw';
-    }
-
-    // UI: Show match results modal
-    showMatchResultsModal(tournamentId) {
+    async showMatchResultsModal(tournamentId) {
         this.currentTournamentId = tournamentId;
-        const matches = this.getMatchResults(tournamentId);
+        const matches = await this.getMatchResults(tournamentId);
         const modal = this.createMatchResultsModal(matches, tournamentId);
         document.body.appendChild(modal);
     }
 
-    // UI: Show report match modal
     showReportMatchModal() {
         const modal = this.createReportMatchModal();
         document.body.appendChild(modal);
@@ -1038,18 +988,17 @@ class MatchResultsCRUD {
             <div class="match-item">
                 <div class="match-info">
                     <div class="match-players">
-                        <span class="player ${match.winner === match.player1 ? 'winner' : ''}">${match.player1}</span>
+                        <span class="player ${match.winner_username === match.player1_username ? 'winner' : ''}">${match.player1_username}</span>
                         <span class="vs">vs</span>
-                        <span class="player ${match.winner === match.player2 ? 'winner' : ''}">${match.player2}</span>
+                        <span class="player ${match.winner_username === match.player2_username ? 'winner' : ''}">${match.player2_username}</span>
                     </div>
                     <div class="match-score">
-                        <span class="score">${match.score1} - ${match.score2}</span>
-                        ${match.winner !== 'Draw' ? `<span class="winner-badge">Winner: ${match.winner}</span>` : '<span class="draw-badge">Draw</span>'}
+                        <span class="score">${match.score_player1} - ${match.score_player2}</span>
+                        <span class="winner-badge">Winner: ${match.winner_username}</span>
                     </div>
                     <div class="match-meta">
-                        <span class="match-date">Date: ${new Date(match.matchDate).toLocaleDateString()}</span>
-                        <span class="reported-by">Reported by: ${match.reportedBy}</span>
-                        <span class="status">Status: ${match.status}</span>
+                        <span class="match-date">Date: ${new Date(match.match_date).toLocaleDateString()}</span>
+                        <span class="match-round">Round: ${match.match_round}</span>
                     </div>
                 </div>
                 <div class="match-actions">
@@ -1062,7 +1011,7 @@ class MatchResultsCRUD {
         modal.innerHTML = `
             <div class="modal-content large">
                 <div class="modal-header">
-                    <h2>Match Results - Tournament ${tournamentId}</h2>
+                    <h2>Match Results - ${tournamentId}</h2>
                     <button class="close-modal">&times;</button>
                 </div>
                 <div class="modal-actions">
@@ -1106,10 +1055,6 @@ class MatchResultsCRUD {
                         <label for="match-date">Match Date:</label>
                         <input type="date" id="match-date" name="date" required value="${new Date().toISOString().split('T')[0]}">
                     </div>
-                    <div class="form-group">
-                        <label for="reported-by">Reported By:</label>
-                        <input type="text" id="reported-by" name="reportedBy" value="Admin" placeholder="Admin/Referee">
-                    </div>
                     <div class="form-actions">
                         <button type="button" class="btn-secondary close-modal">Cancel</button>
                         <button type="submit" class="btn-primary">Report Match</button>
@@ -1120,7 +1065,7 @@ class MatchResultsCRUD {
         return modal;
     }
 
-    createEditMatchModal(match) {
+    createEditMatchModal(matchId) {
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
         modal.innerHTML = `
@@ -1130,30 +1075,18 @@ class MatchResultsCRUD {
                     <button class="close-modal">&times;</button>
                 </div>
                 <form id="edit-match-form" class="match-form">
-                    <input type="hidden" name="matchId" value="${match.id}">
-                    <div class="form-group">
-                        <label for="edit-player1">Player 1:</label>
-                        <input type="text" id="edit-player1" name="player1" required value="${match.player1}">
-                    </div>
+                    <input type="hidden" name="matchId" value="${matchId}">
                     <div class="form-group">
                         <label for="edit-score1">Player 1 Score:</label>
-                        <input type="number" id="edit-score1" name="score1" required min="0" value="${match.score1}">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-player2">Player 2:</label>
-                        <input type="text" id="edit-player2" name="player2" required value="${match.player2}">
+                        <input type="number" id="edit-score1" name="score1" required min="0">
                     </div>
                     <div class="form-group">
                         <label for="edit-score2">Player 2 Score:</label>
-                        <input type="number" id="edit-score2" name="score2" required min="0" value="${match.score2}">
+                        <input type="number" id="edit-score2" name="score2" required min="0">
                     </div>
                     <div class="form-group">
                         <label for="edit-match-date">Match Date:</label>
-                        <input type="date" id="edit-match-date" name="date" required value="${match.matchDate}">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-reported-by">Reported By:</label>
-                        <input type="text" id="edit-reported-by" name="reportedBy" value="${match.reportedBy}">
+                        <input type="date" id="edit-match-date" name="date" required>
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn-secondary close-modal">Cancel</button>
@@ -1165,62 +1098,54 @@ class MatchResultsCRUD {
         return modal;
     }
 
-    handleReportMatch(form) {
+    async handleReportMatch(form) {
         const formData = new FormData(form);
         const matchData = {
             player1: formData.get('player1'),
             player2: formData.get('player2'),
             score1: formData.get('score1'),
             score2: formData.get('score2'),
-            date: formData.get('date'),
-            reportedBy: formData.get('reportedBy')
+            date: formData.get('date')
         };
 
-        const newMatch = this.reportMatchResult(this.currentTournamentId, matchData);
-        if (newMatch) {
+        const success = await this.reportMatchResult(this.currentTournamentId, matchData);
+        if (success) {
             alert('Match result reported successfully!');
             this.closeModal();
-            // Refresh the match results modal
             this.showMatchResultsModal(this.currentTournamentId);
         }
     }
 
-    handleEditMatch(form) {
+    async handleEditMatch(form) {
         const formData = new FormData(form);
         const matchId = formData.get('matchId');
         const updateData = {
-            player1: formData.get('player1'),
-            player2: formData.get('player2'),
             score1: parseInt(formData.get('score1')),
             score2: parseInt(formData.get('score2')),
-            matchDate: formData.get('date'),
-            reportedBy: formData.get('reportedBy')
+            date: formData.get('date')
         };
 
-        const updatedMatch = this.updateMatchResult(matchId, updateData);
-        if (updatedMatch) {
+        const success = await this.updateMatchResult(matchId, updateData);
+        if (success) {
             alert('Match result updated successfully!');
             this.closeModal();
-            // Refresh the match results modal
             this.showMatchResultsModal(this.currentTournamentId);
         }
     }
 
-    editMatchResult(matchId) {
-        const match = this.getMatchResult(matchId);
-        if (match) {
-            this.closeModal();
-            const editModal = this.createEditMatchModal(match);
-            document.body.appendChild(editModal);
-        }
+    async editMatchResult(matchId) {
+        // For simplicity, we'll just show a basic edit form
+        // In a real app, you'd fetch the specific match data first
+        const modal = this.createEditMatchModal(matchId);
+        this.closeModal();
+        document.body.appendChild(modal);
     }
 
-    deleteMatchResult(matchId) {
-        if (confirm('Are you sure you want to delete this match result? This action cannot be undone.')) {
-            const removedMatch = this.removeMatchResult(matchId);
-            if (removedMatch) {
+    async deleteMatchResult(matchId) {
+        if (confirm('Are you sure you want to delete this match result?')) {
+            const success = await this.removeMatchResult(matchId);
+            if (success) {
                 alert('Match result deleted successfully!');
-                // Refresh the match results modal
                 this.showMatchResultsModal(this.currentTournamentId);
             }
         }
@@ -1232,51 +1157,22 @@ class MatchResultsCRUD {
             modal.remove();
         }
     }
-
-    loadSampleData() {
-        // Load sample match results for demonstration
-        this.reportMatchResult('valorant-masters', {
-            player1: 'ProGamer123',
-            player2: 'SniperKing',
-            score1: 16,
-            score2: 12,
-            date: '2025-07-10',
-            reportedBy: 'Tournament Admin'
-        });
-
-        this.reportMatchResult('valorant-masters', {
-            player1: 'ShadowNinja',
-            player2: 'FireStorm',
-            score1: 14,
-            score2: 16,
-            date: '2025-07-09',
-            reportedBy: 'Referee Bot'
-        });
-
-        this.reportMatchResult('rocket-league-cup', {
-            player1: 'RocketMan',
-            player2: 'SkyDriver',
-            score1: 3,
-            score2: 1,
-            date: '2025-07-08',
-            reportedBy: 'Admin'
-        });
-    }
 }
 
-// Tournament Discussions CRUD System
+// Tournament Discussions CRUD System - Database Connected
 class TournamentDiscussionsCRUD {
     constructor() {
-        this.discussions = new Map(); // Store discussions by tournament ID
+        this.discussions = new Map();
         this.currentTournamentId = null;
-        this.currentUserId = 1; // Mock current user ID
-        this.currentUserRole = 'user'; // 'user', 'mod', 'admin'
+        this.currentUserId = 1;
+        this.currentUserRole = 'user';
         this.init();
     }
 
-    init() {
+    async init() {
         this.setupEventListeners();
-        this.loadSampleData();
+        this.removeDuplicatesFromAllTournaments();
+        await this.loadSampleData();
     }
 
     setupEventListeners() {
@@ -1284,7 +1180,14 @@ class TournamentDiscussionsCRUD {
             // View Discussions button
             if (e.target.classList.contains('view-discussions-btn')) {
                 e.preventDefault();
+                
                 const tournamentId = e.target.dataset.tournamentId;
+                
+                if (!tournamentId) {
+                    alert('Error: No tournament ID found. Please refresh the page and try again.');
+                    return;
+                }
+                
                 this.showDiscussionsModal(tournamentId);
             }
 
@@ -1314,8 +1217,30 @@ class TournamentDiscussionsCRUD {
 
             // Reply to discussion
             if (e.target.classList.contains('reply-discussion-btn')) {
+                console.log('🔍 Reply button clicked!');
                 const discussionId = e.target.dataset.discussionId;
+                console.log('🔍 Discussion ID:', discussionId);
                 this.showReplyModal(discussionId);
+            }
+
+            // Back to discussions button
+            if (e.target.classList.contains('back-to-discussions-btn')) {
+                e.preventDefault();
+                this.closeModal();
+                this.showDiscussionsModal(this.currentTournamentId);
+            }
+
+            // Handle reply form submit button clicks directly as backup
+            if (e.target.type === 'submit' && e.target.closest('#reply-discussion-form')) {
+                console.log('🔍 Reply submit button clicked directly!');
+                e.preventDefault();
+                e.stopPropagation();
+                const form = e.target.closest('form');
+                if (form && form.id === 'reply-discussion-form') {
+                    console.log('🔍 Calling handleReplyToDiscussion from button click');
+                    this.handleReplyToDiscussion(form);
+                }
+                return false;
             }
 
             // Close modal
@@ -1326,51 +1251,106 @@ class TournamentDiscussionsCRUD {
 
         // Form submissions
         document.addEventListener('submit', (e) => {
+            console.log('🔍 Form submission detected:', e.target.id, e.target);
+            console.log('🔍 Event target tagName:', e.target.tagName);
+            console.log('🔍 Event target classes:', e.target.className);
+            
             if (e.target.id === 'create-discussion-form') {
+                console.log('🔍 Create discussion form submission detected!');
                 e.preventDefault();
                 this.handleCreateDiscussion(e.target);
             }
 
             if (e.target.id === 'edit-discussion-form') {
+                console.log('🔍 Edit discussion form submission detected!');
                 e.preventDefault();
                 this.handleEditDiscussion(e.target);
             }
 
             if (e.target.id === 'reply-discussion-form') {
+                console.log('🔍 Reply form submission detected!');
+                console.log('🔍 Form element:', e.target);
+                console.log('🔍 Form method:', e.target.method);
+                console.log('🔍 Form action:', e.target.action);
                 e.preventDefault();
+                e.stopPropagation();
                 this.handleReplyToDiscussion(e.target);
+                return false;
             }
-        });
+        }, true); // Use capture phase
     }
 
     // CREATE: Start new discussion thread
-    createDiscussion(tournamentId, discussionData) {
-        if (!this.discussions.has(tournamentId)) {
-            this.discussions.set(tournamentId, []);
+    async createDiscussion(tournamentId, discussionData) {
+        try {
+            console.log('🚀 Creating discussion for tournament:', tournamentId);
+            console.log('🚀 Discussion data:', discussionData);
+            
+            // Validate inputs
+            if (!tournamentId) {
+                console.error('❌ Tournament ID is required');
+                return null;
+            }
+            
+            if (!discussionData.title || !discussionData.content) {
+                console.error('❌ Title and content are required');
+                alert('Please fill in both title and content fields');
+                return null;
+            }
+            
+            // Check for duplicates by title
+            const existingDiscussions = this.getDiscussions(tournamentId);
+            const isDuplicate = existingDiscussions.some(d => d.title === discussionData.title);
+            if (isDuplicate) {
+                console.log('⚠️ Discussion with this title already exists, skipping...');
+                alert('A discussion with this title already exists for this tournament');
+                return null;
+            }
+            
+            // For now, let's use local storage to ensure it works
+            console.log('🔄 Creating discussion locally...');
+            
+            const newDiscussion = {
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // More unique ID
+                tournament_id: tournamentId,
+                title: discussionData.title,
+                description: discussionData.content,
+                creator_username: discussionData.authorName || 'Current User',
+                created_at: new Date().toISOString(),
+                replies_count: 0,
+                is_pinned: false,
+                replies: [] // Add replies array for local storage
+            };
+            
+            // Add to local discussions
+            if (!this.discussions.has(tournamentId)) {
+                this.discussions.set(tournamentId, []);
+            }
+            const discussions = this.discussions.get(tournamentId);
+            discussions.unshift(newDiscussion);
+            this.discussions.set(tournamentId, discussions);
+            
+            console.log('✅ Discussion created locally:', newDiscussion);
+            return newDiscussion;
+        } catch (error) {
+            console.error('❌ Error creating discussion:', error);
+            return null;
         }
+    }
 
-        const discussions = this.discussions.get(tournamentId);
-        
-        const newDiscussion = {
-            id: Date.now().toString(),
-            tournamentId: tournamentId,
-            title: discussionData.title,
-            content: discussionData.content,
-            authorId: discussionData.authorId || this.currentUserId,
-            authorName: discussionData.authorName || 'Current User',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            replies: [],
-            isSticky: false,
-            isLocked: false,
-            views: 0
-        };
-
-        discussions.unshift(newDiscussion); // Add to beginning for newest first
-        this.discussions.set(tournamentId, discussions);
-        
-        console.log('Discussion created:', newDiscussion);
-        return newDiscussion;
+    async refreshDiscussions(tournamentId) {
+        try {
+            // Fetch latest discussions from backend
+            const backendDiscussions = await apiCall(`/tournaments/${tournamentId}/discussions`);
+            const discussionsArray = Array.isArray(backendDiscussions) ? backendDiscussions : [];
+            
+            // Update local storage
+            this.discussions.set(tournamentId, discussionsArray);
+            
+            console.log('Discussions refreshed successfully');
+        } catch (error) {
+            console.error('Error refreshing discussions:', error);
+        }
     }
 
     // READ: Get discussions for a tournament
@@ -1380,10 +1360,21 @@ class TournamentDiscussionsCRUD {
 
     // READ: Get specific discussion
     getDiscussion(discussionId) {
+        console.log('🔍 getDiscussion called with:', discussionId, 'type:', typeof discussionId);
+        console.log('🔍 Available discussions:', this.discussions);
+        
         for (let [tournamentId, discussions] of this.discussions) {
-            const discussion = discussions.find(d => d.id === discussionId);
-            if (discussion) return discussion;
+            console.log(`🔍 Searching in tournament ${tournamentId}, discussions:`, discussions);
+            const discussion = discussions.find(d => {
+                console.log(`🔍 Comparing ${d.id} (${typeof d.id}) === ${discussionId} (${typeof discussionId})`);
+                return d.id == discussionId; // Use == instead of === for type coercion
+            });
+            if (discussion) {
+                console.log('🔍 Found discussion:', discussion);
+                return discussion;
+            }
         }
+        console.log('🔍 No discussion found for ID:', discussionId);
         return null;
     }
 
@@ -1452,11 +1443,48 @@ class TournamentDiscussionsCRUD {
     }
 
     // UI: Show discussions modal
-    showDiscussionsModal(tournamentId) {
+    async showDiscussionsModal(tournamentId) {
+        console.log('🔍 DEBUG: showDiscussionsModal called with ID:', tournamentId);
+        
         this.currentTournamentId = tournamentId;
-        const discussions = this.getDiscussions(tournamentId);
-        const modal = this.createDiscussionsModal(discussions, tournamentId);
-        document.body.appendChild(modal);
+        
+        try {
+            // Fetch discussions from backend
+            console.log('🔍 Fetching discussions from backend...');
+            const backendDiscussions = await apiCall(`/tournaments/${tournamentId}/discussions`);
+            console.log('🔍 Backend discussions raw:', backendDiscussions);
+            
+            // Ensure backendDiscussions is an array
+            const discussionsArray = Array.isArray(backendDiscussions) ? backendDiscussions : [];
+            console.log('🔍 Discussions array:', discussionsArray);
+            
+            // Store discussions in local Map
+            this.discussions.set(tournamentId, discussionsArray);
+            
+            const discussions = this.getDiscussions(tournamentId);
+            console.log('🔍 DEBUG: Retrieved discussions after API call:', discussions);
+            
+            const modal = this.createDiscussionsModal(discussions, tournamentId);
+            console.log('🔍 DEBUG: Modal created successfully');
+            document.body.appendChild(modal);
+            console.log('🔍 DEBUG: Modal added to body');
+        } catch (error) {
+            console.error('❌ Error fetching or showing discussions:', error);
+            
+            // Fallback to local/sample data
+            console.log('🔍 Falling back to local discussions data');
+            const discussions = this.getDiscussions(tournamentId);
+            console.log('🔍 DEBUG: Fallback discussions:', discussions);
+            
+            try {
+                const modal = this.createDiscussionsModal(discussions || [], tournamentId);
+                document.body.appendChild(modal);
+            } catch (modalError) {
+                console.error('❌ Error creating modal:', modalError);
+                console.error('❌ Modal error stack:', modalError.stack);
+                alert(`Error showing discussions: ${modalError.message}. Check console for details.`);
+            }
+        }
     }
 
     // UI: Show create discussion modal
@@ -1473,20 +1501,27 @@ class TournamentDiscussionsCRUD {
             const canEdit = this.canEditDiscussion(discussion);
             const canDelete = this.canDeleteDiscussion(discussion);
             
+            // Handle field name differences between frontend and backend
+            const content = discussion.content || discussion.description || '';
+            const authorName = discussion.authorName || discussion.creator_username || 'Unknown';
+            const createdAt = discussion.createdAt || discussion.created_at || new Date().toISOString();
+            const isSticky = discussion.isSticky || discussion.is_pinned || false;
+            const isLocked = discussion.isLocked || false; // No isLocked in backend yet
+            const repliesCount = discussion.replies ? discussion.replies.length : (discussion.replies_count || 0);
+            const views = discussion.views || 0;
+            
             return `
                 <div class="discussion-item">
                     <div class="discussion-info">
                         <div class="discussion-header">
                             <h4 class="discussion-title">${discussion.title}</h4>
-                            ${discussion.isSticky ? '<span class="sticky-badge">📌 Sticky</span>' : ''}
-                            ${discussion.isLocked ? '<span class="locked-badge">🔒 Locked</span>' : ''}
                         </div>
-                        <div class="discussion-content">${discussion.content.substring(0, 150)}${discussion.content.length > 150 ? '...' : ''}</div>
+                        <div class="discussion-content">${content.substring(0, 150)}${content.length > 150 ? '...' : ''}</div>
                         <div class="discussion-meta">
-                            <span class="author">By: ${discussion.authorName}</span>
-                            <span class="created-date">Created: ${new Date(discussion.createdAt).toLocaleDateString()}</span>
-                            <span class="replies-count">Replies: ${discussion.replies.length}</span>
-                            <span class="views-count">Views: ${discussion.views}</span>
+                            <span class="author">By: ${authorName}</span>
+                            <span class="created-date">Created: ${new Date(createdAt).toLocaleDateString()}</span>
+                            <span class="replies-count">Replies: ${repliesCount}</span>
+                            <span class="views-count">Views: ${views}</span>
                         </div>
                     </div>
                     <div class="discussion-actions">
@@ -1540,20 +1575,6 @@ class TournamentDiscussionsCRUD {
                                   placeholder="Share your thoughts, questions, or start a conversation..." 
                                   rows="6">${isEdit ? discussion.content : ''}</textarea>
                     </div>
-                    ${this.currentUserRole === 'mod' || this.currentUserRole === 'admin' ? `
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" name="isSticky" ${isEdit && discussion.isSticky ? 'checked' : ''}>
-                                Pin this discussion (Sticky)
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" name="isLocked" ${isEdit && discussion.isLocked ? 'checked' : ''}>
-                                Lock discussion (No new replies)
-                            </label>
-                        </div>
-                    ` : ''}
                     <div class="form-actions">
                         <button type="button" class="btn-secondary close-modal">Cancel</button>
                         <button type="submit" class="btn-primary">${isEdit ? 'Update Discussion' : 'Start Discussion'}</button>
@@ -1571,39 +1592,45 @@ class TournamentDiscussionsCRUD {
         const canEdit = this.canEditDiscussion(discussion);
         const canDelete = this.canDeleteDiscussion(discussion);
         
+        // Handle field name differences between frontend and backend
+        const content = discussion.content || discussion.description || '';
+        const authorName = discussion.authorName || discussion.creator_username || 'Unknown';
+        const createdAt = discussion.createdAt || discussion.created_at || new Date().toISOString();
+        const isSticky = discussion.isSticky || discussion.is_pinned || false;
+        const isLocked = discussion.isLocked || false;
+        const replies = discussion.replies || [];
+        const views = discussion.views || 0;
+        const authorId = discussion.authorId || discussion.creator_id;
+        
         modal.innerHTML = `
             <div class="modal-content large">
                 <div class="modal-header">
+                    <button class="back-to-discussions-btn" style="margin-right: 10px;">← Back to Discussions</button>
                     <h2>${discussion.title}</h2>
                     <button class="close-modal">&times;</button>
                 </div>
                 <div class="discussion-full-content">
-                    <div class="discussion-header-full">
-                        ${discussion.isSticky ? '<span class="sticky-badge">📌 Sticky</span>' : ''}
-                        ${discussion.isLocked ? '<span class="locked-badge">🔒 Locked</span>' : ''}
-                    </div>
-                    <div class="discussion-content-full">${discussion.content}</div>
+                    <div class="discussion-content-full">${content}</div>
                     <div class="discussion-meta-full">
-                        <span class="author">Started by: <strong>${discussion.authorName}</strong></span>
-                        <span class="created-date">Created: ${new Date(discussion.createdAt).toLocaleString()}</span>
-                        ${discussion.updatedAt !== discussion.createdAt ? `<span class="updated-date">Last updated: ${new Date(discussion.updatedAt).toLocaleString()}</span>` : ''}
-                        <span class="views-count">Views: ${discussion.views + 1}</span>
+                        <span class="author">Started by: <strong>${authorName}</strong></span>
+                        <span class="created-date">Created: ${new Date(createdAt).toLocaleString()}</span>
+                        <span class="views-count">Views: ${views + 1}</span>
                     </div>
                     <div class="discussion-actions-full">
                         ${canEdit ? `<button class="btn-edit edit-discussion-btn" data-discussion-id="${discussion.id}">Edit</button>` : ''}
                         ${canDelete ? `<button class="btn-delete delete-discussion-btn" data-discussion-id="${discussion.id}">Delete</button>` : ''}
-                        ${discussion.authorId !== this.currentUserId ? `<button class="btn-primary reply-discussion-btn" data-discussion-id="${discussion.id}">Reply</button>` : ''}
+                        ${authorId !== this.currentUserId ? `<button class="btn-primary reply-discussion-btn" data-discussion-id="${discussion.id}">Reply</button>` : ''}
                     </div>
                     <div class="replies-section">
-                        <h3>Replies (${discussion.replies.length})</h3>
+                        <h3>Replies (${replies.length})</h3>
                         <div class="replies-list">
-                            ${discussion.replies.length > 0 ? 
-                                discussion.replies.map(reply => `
+                            ${replies.length > 0 ? 
+                                replies.map(reply => `
                                     <div class="reply-item">
                                         <div class="reply-content">${reply.content}</div>
                                         <div class="reply-meta">
-                                            <span>By: ${reply.authorName}</span>
-                                            <span>${new Date(reply.createdAt).toLocaleString()}</span>
+                                            <span>By: ${reply.author_name || reply.authorName || 'Unknown'}</span>
+                                            <span>${new Date(reply.created_at || reply.createdAt).toLocaleString()}</span>
                                         </div>
                                     </div>
                                 `).join('') : 
@@ -1616,26 +1643,45 @@ class TournamentDiscussionsCRUD {
         `;
         
         // Increment views
-        discussion.views++;
+        if (discussion.views !== undefined) {
+            discussion.views++;
+        }
         
         return modal;
     }
 
-    handleCreateDiscussion(form) {
-        const formData = new FormData(form);
-        const discussionData = {
-            title: formData.get('title'),
-            content: formData.get('content'),
-            isSticky: formData.get('isSticky') === 'on',
-            isLocked: formData.get('isLocked') === 'on'
-        };
+    async handleCreateDiscussion(form) {
+        try {
+            const formData = new FormData(form);
+            const discussionData = {
+                title: formData.get('title'),
+                content: formData.get('content'),
+                isSticky: formData.get('isSticky') === 'on',
+                isLocked: formData.get('isLocked') === 'on'
+            };
 
-        const newDiscussion = this.createDiscussion(this.currentTournamentId, discussionData);
-        if (newDiscussion) {
-            alert('Discussion started successfully!');
-            this.closeModal();
-            // Refresh the discussions modal
-            this.showDiscussionsModal(this.currentTournamentId);
+            console.log('🔄 Creating discussion with data:', discussionData);
+            console.log('🔄 Tournament ID:', this.currentTournamentId);
+
+            if (!this.currentTournamentId) {
+                console.error('❌ No tournament ID set');
+                alert('Error: No tournament selected. Please try again.');
+                return;
+            }
+
+            const result = await this.createDiscussion(this.currentTournamentId, discussionData);
+            if (result) {
+                alert('Discussion started successfully!');
+                this.closeModal();
+                // Refresh the discussions modal
+                this.showDiscussionsModal(this.currentTournamentId);
+            } else {
+                console.error('❌ Discussion creation failed - result was null');
+                alert('Failed to create discussion. Please check the console for details.');
+            }
+        } catch (error) {
+            console.error('❌ Error in handleCreateDiscussion:', error);
+            alert('Failed to create discussion. Error: ' + error.message);
         }
     }
 
@@ -1678,68 +1724,139 @@ class TournamentDiscussionsCRUD {
         }
     }
 
-    viewDiscussionDetails(discussionId) {
+    async viewDiscussionDetails(discussionId) {
         const discussion = this.getDiscussion(discussionId);
         if (discussion) {
+            // Fetch replies from backend
+            try {
+                const replies = await apiCall(`/discussions/${discussionId}/replies`);
+                discussion.replies = replies || [];
+            } catch (error) {
+                console.error('Failed to load replies:', error);
+                discussion.replies = discussion.replies || [];
+            }
+            
             this.closeModal();
             const detailsModal = this.createDiscussionDetailsModal(discussion);
             document.body.appendChild(detailsModal);
         }
     }
 
-    closeModal() {
-        const modal = document.querySelector('.modal-overlay');
-        if (modal) {
-            modal.remove();
-        }
+    // Utility method to clear all discussions (useful for testing)
+    clearAllDiscussions() {
+        this.discussions.clear();
+        localStorage.removeItem('sampleDiscussionsLoaded');
+        localStorage.clear();
+        window.sampleDataLoadedThisSession = false;
+        console.log('All discussions cleared');
+    }
+    
+    // Force clear everything and reload page
+    forceResetDiscussions() {
+        this.discussions.clear();
+        localStorage.clear();
+        sessionStorage.clear();
+        window.sampleDataLoadedThisSession = false;
+        window.location.reload();
     }
 
-    loadSampleData() {
-        // Load sample discussions for demonstration
-        this.createDiscussion('valorant-masters', {
+    // Utility method to remove duplicates
+    removeDuplicateDiscussions(tournamentId) {
+        const discussions = this.getDiscussions(tournamentId);
+        const seen = new Set();
+        const uniqueDiscussions = discussions.filter(discussion => {
+            if (seen.has(discussion.title)) {
+                return false;
+            }
+            seen.add(discussion.title);
+            return true;
+        });
+        
+        const duplicatesRemoved = discussions.length - uniqueDiscussions.length;
+        this.discussions.set(tournamentId, uniqueDiscussions);
+        return duplicatesRemoved;
+    }
+
+    // Remove duplicates from all tournaments
+    removeDuplicatesFromAllTournaments() {
+        let totalRemoved = 0;
+        for (let tournamentId of this.discussions.keys()) {
+            totalRemoved += this.removeDuplicateDiscussions(tournamentId);
+        }
+        return totalRemoved;
+    }
+
+    async loadSampleData() {
+        // Check if sample data was already loaded
+        const sampleDataLoaded = localStorage.getItem('sampleDiscussionsLoaded');
+        if (sampleDataLoaded === 'true' || window.sampleDataLoadedThisSession) {
+            return;
+        }
+        
+        // Check if discussions already exist
+        const existingCount = Array.from(this.discussions.values()).reduce((total, discussions) => total + discussions.length, 0);
+        if (existingCount > 0) {
+            localStorage.setItem('sampleDiscussionsLoaded', 'true');
+            window.sampleDataLoadedThisSession = true;
+            return;
+        }
+        
+        // Load minimal sample data
+        await this.createDiscussion('1', {
             title: 'Team Strategy Discussion',
-            content: 'What are the best strategies for the upcoming Valorant Masters tournament? Share your insights and team compositions here!',
+            content: 'What are the best strategies for the upcoming tournament?',
             authorName: 'TacticsPro',
             authorId: 2
         });
 
-        this.createDiscussion('valorant-masters', {
+        await this.createDiscussion('1', {
             title: 'Looking for Team Members',
-            content: 'Hi everyone! I\'m looking for skilled players to form a team for this tournament. Must have good communication and be available for practice sessions.',
+            content: 'Looking for skilled players to form a team for this tournament.',
             authorName: 'TeamCaptain',
             authorId: 3
         });
-
-        this.createDiscussion('rocket-league-cup', {
-            title: 'Car Builds and Customization',
-            content: 'Let\'s discuss the best car setups for competitive play. What\'s your favorite car and boost combination?',
-            authorName: 'RocketExpert',
-            authorId: 4
-        });
-
-        // Add some sample replies
-        const discussions = this.getDiscussions('valorant-masters');
-        if (discussions.length > 0) {
-            discussions[0].replies.push({
-                id: 'reply1',
-                content: 'Great topic! I think Sage and Sova are essential for any competitive team.',
-                authorName: 'EliteTactician',
-                authorId: 5,
-                createdAt: new Date(Date.now() - 3600000).toISOString() // 1 hour ago
-            });
-        }
+        
+        localStorage.setItem('sampleDiscussionsLoaded', 'true');
+        window.sampleDataLoadedThisSession = true;
     }
 
     // UI: Show reply modal
     showReplyModal(discussionId) {
+        console.log('🔍 showReplyModal called with discussionId:', discussionId);
         const modal = this.createReplyFormModal(discussionId);
-        document.body.appendChild(modal);
+        console.log('🔍 Modal created:', modal);
+        if (modal) {
+            document.body.appendChild(modal);
+            console.log('🔍 Modal appended to body');
+            
+            // Add direct event listener to the form as backup
+            const form = modal.querySelector('#reply-discussion-form');
+            if (form) {
+                console.log('🔍 Adding direct submit listener to reply form');
+                form.addEventListener('submit', (e) => {
+                    console.log('🔍 Direct form submit listener triggered!');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.handleReplyToDiscussion(form);
+                    return false;
+                });
+            }
+        } else {
+            console.error('❌ Failed to create reply modal');
+        }
     }
 
     // UI: Create reply form modal
     createReplyFormModal(discussionId) {
+        console.log('🔍 createReplyFormModal called with discussionId:', discussionId);
         const discussion = this.getDiscussion(discussionId);
-        if (!discussion) return;
+        console.log('🔍 Found discussion:', discussion);
+        
+        if (!discussion) {
+            console.error('❌ No discussion found for ID:', discussionId);
+            alert('Discussion not found. Please refresh the page and try again.');
+            return null;
+        }
 
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
@@ -1767,10 +1884,14 @@ class TournamentDiscussionsCRUD {
     }
 
     // Handle reply form submission
-    handleReplyToDiscussion(form) {
+    async handleReplyToDiscussion(form) {
+        console.log('🔍 handleReplyToDiscussion called with form:', form);
+        
         const formData = new FormData(form);
         const discussionId = formData.get('discussionId');
         const content = formData.get('content');
+
+        console.log('🔍 Form data - Discussion ID:', discussionId, 'Content:', content);
 
         if (!discussionId || !content.trim()) {
             alert('Please provide a reply content.');
@@ -1779,42 +1900,62 @@ class TournamentDiscussionsCRUD {
 
         const replyData = {
             content: content.trim(),
-            authorId: this.currentUserId,
             authorName: 'Current User'
         };
 
-        if (this.addReplyToDiscussion(discussionId, replyData)) {
-            this.closeModal();
-            // Refresh the discussion details modal to show the new reply
-            this.viewDiscussionDetails(discussionId);
+        console.log('🔍 About to call addReplyToDiscussion with:', replyData);
+
+        try {
+            const success = await this.addReplyToDiscussion(discussionId, replyData);
+            console.log('🔍 addReplyToDiscussion result:', success);
+            if (success) {
+                this.closeModal();
+                // Refresh the discussion details modal to show the new reply
+                this.viewDiscussionDetails(discussionId);
+            }
+        } catch (error) {
+            console.error('Failed to add reply:', error);
+            alert('Failed to add reply. Please try again.');
         }
     }
 
     // Add reply to discussion
-    addReplyToDiscussion(discussionId, replyData) {
-        const discussion = this.getDiscussion(discussionId);
-        if (!discussion) {
-            alert('Discussion not found.');
+    async addReplyToDiscussion(discussionId, replyData) {
+        try {
+            const response = await apiCall(`/discussions/${discussionId}/replies`, {
+                method: 'POST',
+                body: JSON.stringify(replyData)
+            });
+
+            if (response.success) {
+                // Update local discussion with new reply
+                const discussion = this.getDiscussion(discussionId);
+                if (discussion) {
+                    if (!discussion.replies) {
+                        discussion.replies = [];
+                    }
+                    discussion.replies.push(response.reply);
+                }
+                
+                console.log('Reply added successfully:', response.reply);
+                return true;
+            } else {
+                console.error('Failed to add reply:', response.error);
+                return false;
+            }
+        } catch (error) {
+            console.error('Error adding reply:', error);
             return false;
         }
+    }
+}
 
-        if (discussion.isLocked && this.currentUserRole !== 'mod' && this.currentUserRole !== 'admin') {
-            alert('This discussion is locked. Only moderators can reply.');
-            return false;
-        }
-
-        const newReply = {
-            id: Date.now().toString(),
-            content: replyData.content,
-            authorId: replyData.authorId,
-            authorName: replyData.authorName,
-            createdAt: new Date().toISOString()
-        };
-
-        discussion.replies.push(newReply);
-        
-        console.log('Reply added:', newReply);
-        return true;
+// Test backend connection on page load
+async function testBackendConnection() {
+    try {
+        await apiCall('/health');
+    } catch (error) {
+        console.log('Backend disconnected - using local storage');
     }
 }
 
@@ -1824,4 +1965,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.userConnectionsCRUD = new UserConnectionsCRUD();
     window.matchResultsCRUD = new MatchResultsCRUD();
     window.tournamentDiscussionsCRUD = new TournamentDiscussionsCRUD();
+
+    // Test backend connection
+    testBackendConnection();
 });

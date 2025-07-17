@@ -708,32 +708,28 @@
         </ul>
       </section>
       <section class="tab-content" id="tab-friends" style="display:none" aria-label="Friends and Followers">
-        <!-- Connection tabs -->
         <div class="connections-tabs">
           <button class="connections-tab-btn active" data-tab="followers">Followers</button>
           <button class="connections-tab-btn" data-tab="following">Following</button>
           <button class="connections-tab-btn" data-tab="pending">Pending</button>
-          <button class="discover-users-btn connections-tab-btn">Discover Users</button>
+          <button class="connections-tab-btn discover-users-btn">Discover Users</button>
         </div>
-        
-        <!-- Followers content -->
-        <div id="followers-content" class="connections-content">
+
+        <div class="connections-content" id="followers-content">
           <ul class="insta-list" id="followers-list">
-            <!-- Content will be dynamically loaded -->
+            <p class="no-connections">Loading followers...</p>
           </ul>
         </div>
-        
-        <!-- Following content -->
-        <div id="following-content" class="connections-content" style="display:none">
+
+        <div class="connections-content" id="following-content" style="display:none">
           <ul class="insta-list" id="following-list">
-            <!-- Content will be dynamically loaded -->
+            <p class="no-connections">Loading following...</p>
           </ul>
         </div>
-        
-        <!-- Pending content -->
-        <div id="pending-content" class="connections-content" style="display:none">
+
+        <div class="connections-content" id="pending-content" style="display:none">
           <ul class="insta-list" id="pending-list">
-            <!-- Content will be dynamically loaded -->
+            <p class="no-connections">Loading pending connections...</p>
           </ul>
         </div>
       </section>

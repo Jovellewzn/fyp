@@ -316,7 +316,9 @@
   <main class="tournaments-main">
     <header class="tournaments-header">
       <h1 class="tournaments-title">Tournaments</h1>
-      <a href="#create-tournament" class="create-tournament-btn">Create Tournament</a>
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <a href="#create-tournament" class="create-tournament-btn">Create Tournament</a>
+      </div>
     </header>
     <form class="filter-bar" aria-label="Filter Tournaments">
       <label for="game_type">Game Type:</label>
@@ -341,7 +343,7 @@
     </form>
     <section class="tournaments-grid" aria-label="Tournaments List">
       <!-- Placeholder: List tournaments from DB (CRUD: Read) -->
-      <article class="tournament-card" data-tournament-id="valorant-masters">
+      <article class="tournament-card" data-tournament-id="1">
         <div class="tournament-title">Valorant Masters</div>
         <div class="tournament-desc">The ultimate FPS tournament for Valorant pros. Compete for glory and cash!</div>
         <div class="tournament-meta">FPS | Entry Fee: $10 | Prize: $2,000 | Max: 64 | 2025-07-20 to 2025-07-22</div>
@@ -351,11 +353,11 @@
         <div class="tournament-actions">
           <a href="#details" class="tournament-btn view-details-btn">View Details</a>
           <button class="tournament-btn join-btn">Join</button>
-          <button class="tournament-btn view-match-results-btn" data-tournament-id="valorant-masters">Match Results</button>
-          <button class="tournament-btn view-discussions-btn" data-tournament-id="valorant-masters">Discussions</button>
+          <button class="tournament-btn view-match-results-btn" data-tournament-id="1">Match Results</button>
+          <button class="tournament-btn view-discussions-btn" data-tournament-id="1">Discussions</button>
         </div>
       </article>
-      <article class="tournament-card" data-tournament-id="rocket-league-cup">
+      <article class="tournament-card" data-tournament-id="2">
         <div class="tournament-title">Rocket League Cup</div>
         <div class="tournament-desc">Show off your car soccer skills in this high-flying Rocket League event.</div>
         <div class="tournament-meta">Sports | Entry Fee: $5 | Prize: $1,000 | Max: 32 | 2025-07-25 to 2025-07-26</div>
@@ -365,11 +367,11 @@
         <div class="tournament-actions">
           <a href="#details" class="tournament-btn view-details-btn">View Details</a>
           <button class="tournament-btn join-btn">Join</button>
-          <button class="tournament-btn view-match-results-btn" data-tournament-id="rocket-league-cup">Match Results</button>
-          <button class="tournament-btn view-discussions-btn" data-tournament-id="rocket-league-cup">Discussions</button>
+          <button class="tournament-btn view-match-results-btn" data-tournament-id="2">Match Results</button>
+          <button class="tournament-btn view-discussions-btn" data-tournament-id="2">Discussions</button>
         </div>
       </article>
-      <article class="tournament-card" data-tournament-id="apex-legends-showdown">
+      <article class="tournament-card" data-tournament-id="3">
         <div class="tournament-title">Apex Legends Showdown</div>
         <div class="tournament-desc">Battle it out in the Apex arena for fame and fortune. Who will be champion?</div>
         <div class="tournament-meta">Battle Royale | Entry Fee: $8 | Prize: $1,500 | Max: 48 | 2025-08-01 to 2025-08-03</div>
@@ -379,11 +381,11 @@
         <div class="tournament-actions">
           <a href="#details" class="tournament-btn view-details-btn">View Details</a>
           <button class="tournament-btn join-btn">Join</button>
-          <button class="tournament-btn view-match-results-btn" data-tournament-id="apex-legends-showdown">Match Results</button>
-          <button class="tournament-btn view-discussions-btn" data-tournament-id="apex-legends-showdown">Discussions</button>
+          <button class="tournament-btn view-match-results-btn" data-tournament-id="3">Match Results</button>
+          <button class="tournament-btn view-discussions-btn" data-tournament-id="3">Discussions</button>
         </div>
       </article>
-      <article class="tournament-card" data-tournament-id="retro-smash">
+      <article class="tournament-card" data-tournament-id="4">
         <div class="tournament-title">Retro Smash</div>
         <div class="tournament-desc">Classic games, big prizes. Relive the golden age of gaming!</div>
         <div class="tournament-meta">Arcade | Entry Fee: $3 | Prize: $500 | Max: 16 | 2025-08-10 to 2025-08-10</div>
@@ -392,8 +394,8 @@
         </div>
         <div class="tournament-actions">
           <a href="#details" class="tournament-btn view-details-btn">View Details</a>
-          <button class="tournament-btn view-match-results-btn" data-tournament-id="retro-smash">Match Results</button>
-          <button class="tournament-btn view-discussions-btn" data-tournament-id="retro-smash">Discussions</button>
+          <button class="tournament-btn view-match-results-btn" data-tournament-id="4">Match Results</button>
+          <button class="tournament-btn view-discussions-btn" data-tournament-id="4">Discussions</button>
         </div>
       </article>
     </section>

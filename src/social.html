@@ -346,6 +346,115 @@
       font-weight: 600;
       margin-left: 0.5rem;
     }
+    .connections-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .connections-tab-btn {
+      flex: 1;
+      padding: 0.5rem;
+      background: rgba(106, 130, 251, 0.1);
+      border: 1px solid rgba(106, 130, 251, 0.3);
+      color: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .connections-tab-btn.active {
+      background: var(--gradient-main);
+      border-color: transparent;
+    }
+    .connections-tab-btn:hover {
+      background: rgba(106, 130, 251, 0.2);
+    }
+    .connections-content {
+      min-height: 150px;
+    }
+    .no-connections {
+      text-align: center;
+      color: #aaa;
+      font-style: italic;
+      padding: 2rem 0;
+    }
+    .user-avatar-small {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--gradient-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: white;
+      font-size: 14px;
+    }
+    .insta-card {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.8rem;
+      background: rgba(106, 130, 251, 0.05);
+      border-radius: 12px;
+      margin-bottom: 0.5rem;
+      transition: background 0.2s;
+    }
+    .insta-card:hover {
+      background: rgba(106, 130, 251, 0.1);
+    }
+    .insta-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .insta-title {
+      font-weight: 600;
+      color: #fff;
+    }
+    .insta-meta {
+      font-size: 0.8rem;
+      color: #aaa;
+    }
+    .connection-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .btn-small {
+      padding: 0.3rem 0.8rem;
+      font-size: 0.8rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-success {
+      background: #28a745;
+      color: white;
+    }
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+    .btn-primary {
+      background: var(--gradient-main);
+      color: white;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-small:hover, .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
     @media (max-width: 1100px) {
       .feed-main {
         flex-direction: column;
@@ -466,6 +575,30 @@
     </section>
     <aside class="feed-sidebar">
       <div class="sidebar-card">
+        <div class="sidebar-title">My Connections</div>
+        <div class="connections-tabs">
+          <button class="connections-tab-btn active" data-tab="followers">Followers</button>
+          <button class="connections-tab-btn" data-tab="following">Following</button>
+          <button class="connections-tab-btn" data-tab="pending">Pending</button>
+        </div>
+        <div id="followers-content" class="connections-content">
+          <ul id="followers-list" class="sidebar-list">
+            <li class="no-connections">Loading followers...</li>
+          </ul>
+        </div>
+        <div id="following-content" class="connections-content" style="display: none;">
+          <ul id="following-list" class="sidebar-list">
+            <li class="no-connections">Loading following...</li>
+          </ul>
+        </div>
+        <div id="pending-content" class="connections-content" style="display: none;">
+          <ul id="pending-list" class="sidebar-list">
+            <li class="no-connections">Loading pending...</li>
+          </ul>
+        </div>
+        <button class="btn-primary discover-users-btn" style="margin-top: 1rem; width: 100%;">Discover Users</button>
+      </div>
+      <div class="sidebar-card">
         <div class="sidebar-title">Trending Tournaments</div>
         <ul class="sidebar-list">
           <li>Valorant Masters <span class="sidebar-badge">Active</span></li>
@@ -482,5 +615,6 @@
       </div>
     </aside>
   </main>
+  <script src="scripts/app.js"></script>
 </body>
 </html>

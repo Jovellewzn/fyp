@@ -120,7 +120,8 @@ CREATE TABLE IF NOT EXISTS tournament_discussions (
     replies_count INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE,
-    FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(tournament_id, title)
 );
 
 CREATE TABLE IF NOT EXISTS notifications (
