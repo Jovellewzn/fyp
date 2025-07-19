@@ -228,13 +228,25 @@
       </div>
     </form>
   </div>
+  <script src="scripts/app.js"></script>
   <script>
-    document.querySelector('.login-card').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const email = document.getElementById('email').value;
-      // For demo, use email as username
-      localStorage.setItem('user', JSON.stringify({ username: email.split('@')[0], email }));
-      window.location.href = 'index.html';
+    // Set up login form handler
+    document.addEventListener('DOMContentLoaded', function() {
+      const loginForm = document.querySelector('.login-card');
+      if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const email = document.getElementById('email').value;
+          const password = document.getElementById('password').value;
+          
+          // Use the API to login
+          login(email, password).then(() => {
+            window.location.href = 'index.html';
+          }).catch(error => {
+            console.error('Login failed:', error);
+          });
+        });
+      }
     });
   </script>
 </body>

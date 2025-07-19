@@ -192,50 +192,28 @@ function displayTournaments(tournaments) {
     if (!container) return;
     
     if (tournaments.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #b3b3b3; grid-column: 1/-1;">No tournaments available. Create one to get started!</p>';
+        container.innerHTML = '<p>No tournaments available.</p>';
         return;
     }
     
     container.innerHTML = tournaments.map(tournament => `
-        <div class="tournament-card" style="
-            background: rgba(42, 42, 42, 0.8);
-            border: 1px solid rgba(106, 130, 251, 0.3);
-            border-radius: 15px;
-            padding: 1.5rem;
-            transition: all 0.3s ease;
-        ">
-            <h3 style="color: #fc5c7d; margin: 0 0 1rem 0;">${tournament.title}</h3>
-            <p style="color: #b3b3b3; margin-bottom: 1rem;">${tournament.description || 'No description available'}</p>
-            <div class="tournament-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; font-size: 0.9rem;">
-                <span style="color: #6a82fb;">🎮 ${tournament.game_type}</span>
-                <span style="color: #6a82fb;">💰 Entry: $${tournament.entry_fee}</span>
-                <span style="color: #6a82fb;">🏆 Prize: $${tournament.prize_pool}</span>
-                <span style="color: #6a82fb;">👥 ${tournament.participant_count}/${tournament.max_participants}</span>
-                <span style="color: #6a82fb;">📅 Status: ${tournament.status}</span>
-                <span style="color: #6a82fb;">👤 By: ${tournament.organizer_name || 'Unknown'}</span>
+        <div class="tournament-card">
+            <h3>${tournament.title}</h3>
+            <p>${tournament.description || 'No description available'}</p>
+            <div class="tournament-info">
+                <span>Game: ${tournament.game_type}</span>
+                <span>Entry Fee: $${tournament.entry_fee}</span>
+                <span>Prize Pool: $${tournament.prize_pool}</span>
+                <span>Participants: ${tournament.participant_count}/${tournament.max_participants}</span>
+                <span>Status: ${tournament.status}</span>
             </div>
-            <div class="tournament-dates" style="margin-bottom: 1rem; font-size: 0.8rem; color: #999;">
-                <div>Start: ${new Date(tournament.start_date).toLocaleString()}</div>
-                <div>End: ${new Date(tournament.end_date).toLocaleString()}</div>
+            <div class="tournament-dates">
+                <small>Start: ${new Date(tournament.start_date).toLocaleString()}</small><br>
+                <small>End: ${new Date(tournament.end_date).toLocaleString()}</small>
             </div>
             ${currentUser && tournament.participant_count < tournament.max_participants ? 
-                `<button onclick="joinTournamentPrompt(${tournament.id})" style="
-                    background: linear-gradient(45deg, #fc5c7d, #6a82fb);
-                    color: white;
-                    border: none;
-                    padding: 0.8rem 1.5rem;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    width: 100%;
-                    font-weight: bold;
-                    transition: all 0.3s ease;
-                " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-                    Join Tournament
-                </button>` : 
-                tournament.participant_count >= tournament.max_participants ? 
-                '<span style="color: #ff6b6b; font-weight: bold;">Tournament Full</span>' :
-                '<span style="color: #6a82fb;">Login to join tournaments</span>'
-            }
+                `<button onclick="joinTournamentPrompt(${tournament.id})" class="btn btn-primary">Join Tournament</button>` : 
+                ''}
         </div>
     `).join('');
 }
@@ -325,14 +303,3 @@ window.loadTournaments = loadTournaments;
 window.createTournament = createTournament;
 window.joinTournament = joinTournament;
 window.joinTournamentPrompt = joinTournamentPrompt;
-
-// Additional UI functions for the tournament form
-window.showCreateTournamentForm = function() {
-    document.getElementById('createTournamentForm').style.display = 'block';
-    document.getElementById('createTournamentBtn').style.display = 'none';
-};
-
-window.hideCreateTournamentForm = function() {
-    document.getElementById('createTournamentForm').style.display = 'none';
-    document.getElementById('createTournamentBtn').style.display = 'inline-block';
-};

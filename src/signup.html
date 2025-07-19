@@ -237,14 +237,26 @@
       </div>
     </form>
   </div>
+  <script src="scripts/app.js"></script>
   <script>
-    document.querySelector('.signup-card').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const username = document.getElementById('username').value;
-      const email = document.getElementById('email').value;
-      // For demo, just store username and email
-      localStorage.setItem('user', JSON.stringify({ username, email }));
-      window.location.href = 'index.html';
+    document.addEventListener('DOMContentLoaded', function() {
+      const signupForm = document.querySelector('.signup-card');
+      if (signupForm) {
+        signupForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const username = document.getElementById('username').value;
+          const email = document.getElementById('email').value;
+          const password = document.getElementById('password').value;
+          
+          // Use the API to register
+          register(username, email, password).then(() => {
+            // Redirect to login after successful registration
+            window.location.href = 'login.html';
+          }).catch(error => {
+            console.error('Registration failed:', error);
+          });
+        });
+      }
     });
   </script>
 </body>

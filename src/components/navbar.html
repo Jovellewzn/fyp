@@ -1,0 +1,91 @@
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="nav-brand">
+            <a href="index.html">🏆 GameVibe Arena</a>
+        </div>
+        <div class="nav-menu">
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="tournaments.html" class="nav-link">Tournaments</a>
+            <a href="profile.html" class="nav-link">Profile</a>
+            <a href="social.html" class="nav-link">Social</a>
+            <a href="notifications.html" class="nav-link">Notifications</a>
+        </div>
+        <div class="nav-auth">
+            <a href="login.html" class="nav-link login-btn">Login</a>
+            <a href="signup.html" class="nav-link signup-btn">Sign Up</a>
+        </div>
+    </div>
+</nav>
+
+<style>
+.navbar {
+    background: rgba(30, 34, 45, 0.9);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(106, 130, 251, 0.3);
+    padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2rem;
+}
+
+.nav-brand a {
+    color: #fc5c7d;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.nav-menu {
+    display: flex;
+    gap: 2rem;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    background: rgba(106, 130, 251, 0.2);
+    color: #6a82fb;
+}
+
+.nav-auth {
+    display: flex;
+    gap: 1rem;
+}
+
+.login-btn {
+    background: rgba(106, 130, 251, 0.2);
+    border: 1px solid #6a82fb;
+}
+
+.signup-btn {
+    background: linear-gradient(45deg, #fc5c7d, #6a82fb);
+    border: none;
+}
+
+@media (max-width: 768px) {
+    .nav-container {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .nav-menu {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+</style>

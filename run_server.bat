@@ -1,5 +1,6 @@
 @echo off
 echo Starting Tournament Management System...
-echo =====================================
+echo ====================================
+cd /d C:\FYP
 python app.py
 pause

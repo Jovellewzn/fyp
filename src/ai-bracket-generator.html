@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Bracket Generator | GameVibe Arena</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <style>
+        .ai-container {
+            max-width: 1000px;
+            margin: 100px auto 2rem;
+            padding: 2rem;
+            background: rgba(30, 34, 45, 0.9);
+            border-radius: 15px;
+            border: 2px solid rgba(106, 130, 251, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .ai-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .ai-header h1 {
+            background: linear-gradient(90deg, #6a82fb 0%, #fc5c7d 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
+        }
+        
+        .ai-header p {
+            color: #bdc3c7;
+            font-size: 1.1rem;
+        }
+        
+        .setup-section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .setup-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .form-group label {
+            color: #fff;
+            font-weight: 600;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #6a82fb;
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .players-input {
+            grid-column: 1/-1;
+        }
+        
+        .players-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .participant-card {
+            background: linear-gradient(45deg, rgba(106, 130, 251, 0.1), rgba(252, 92, 125, 0.1));
+            border: 1px solid rgba(106, 130, 251, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .participant-card:hover {
+            transform: translateY(-2px);
+            border-color: #6a82fb;
+            box-shadow: 0 5px 15px rgba(106, 130, 251, 0.2);
+        }
+        
+        .participant-name {
+            color: #fff;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .participant-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            color: #bdc3c7;
+        }
+        
+        .stat-value {
+            color: #6a82fb;
+            font-weight: 600;
+        }
+        
+        .skill-rating {
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+        
+        .skill-bar {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+            margin-top: 0.3rem;
+        }
+        
+        .skill-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #6a82fb, #fc5c7d);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        
+        .generate-btn {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: linear-gradient(45deg, #6a82fb, #fc5c7d);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(106, 130, 251, 0.4);
+        }
+        
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .bracket-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 2rem;
+            margin-top: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .bracket-round {
+            margin-bottom: 2rem;
+        }
+        
+        .round-title {
+            text-align: center;
+            color: #6a82fb;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .matches-grid {
+            display: grid;
+            gap: 1rem;
+            justify-items: center;
+        }
+        
+        .match-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 100%;
+            max-width: 300px;
+        }
+        
+        .match-players {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .player {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+        }
+        
+        .player-name {
+            color: #fff;
+            font-weight: 500;
+        }
+        
+        .win-probability {
+            background: linear-gradient(45deg, #6a82fb, #fc5c7d);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .ai-prediction {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: rgba(252, 92, 125, 0.1);
+            border-left: 3px solid #fc5c7d;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #fc5c7d;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #6a82fb;
+            font-size: 1.1rem;
+            padding: 2rem;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(106, 130, 251, 0.3);
+            border-radius: 50%;
+            border-top-color: #6a82fb;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 1rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            padding: 0.8rem 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-2px);
+        }
+        
+        @media (max-width: 768px) {
+            .setup-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .ai-header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">← Back to Home</a>
+    
+    <div class="ai-container">
+        <div class="ai-header">
+            <h1>🤖 AI Bracket Generator</h1>
+            <p>Generate intelligent tournament brackets with AI-powered match predictions</p>
+        </div>
+        
+        <!-- Tournament Setup -->
+        <div class="setup-section">
+            <h3 style="color: #fff; margin-bottom: 1.5rem; text-align: center;">🏆 AI Bracket Generation</h3>
+            
+            <div class="setup-grid">
+                <div class="form-group">
+                    <label for="tournamentSelect">Select Tournament</label>
+                    <select id="tournamentSelect" onchange="loadTournamentParticipants()">
+                        <option value="">Choose a tournament...</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bracketType">Bracket Type</label>
+                    <select id="bracketType">
+                        <option value="single_elimination">Single Elimination</option>
+                        <option value="double_elimination">Double Elimination</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Tournament Info Display -->
+            <div id="tournamentInfo" style="display: none; margin: 1.5rem 0; padding: 1rem; background: rgba(106, 130, 251, 0.1); border-radius: 8px; border: 1px solid rgba(106, 130, 251, 0.3);">
+                <h4 style="color: #6a82fb; margin-bottom: 0.5rem;">Tournament Details</h4>
+                <div id="tournamentDetails"></div>
+            </div>
+            
+            <!-- Participants Display -->
+            <div id="participantsSection" style="display: none; margin: 1.5rem 0;">
+                <h4 style="color: #fff; margin-bottom: 1rem;">📊 Participants & AI Analysis</h4>
+                <div id="participantsList" class="players-list"></div>
+            </div>
+            
+            <button onclick="generateAIBracket()" id="generateBtn" class="generate-btn" disabled>
+                🤖 Generate AI-Powered Bracket
+            </button>
+        </div>
+        
+        <!-- Bracket Display -->
+        <div id="bracketContainer" style="display: none;">
+            <!-- Bracket will be generated here -->
+        </div>
+    </div>
+
+    <script>
+        let tournaments = [];
+        let selectedTournament = null;
+        let participants = [];
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTournaments();
+        });
+
+        async function loadTournaments() {
+            try {
+                const response = await fetch('/api/ai/tournaments');
+                const data = await response.json();
+                
+                if (data.success) {
+                    tournaments = data.tournaments;
+                    populateTournamentSelect();
+                } else {
+                    showError('Failed to load tournaments: ' + data.error);
+                }
+            } catch (error) {
+                showError('Error loading tournaments: ' + error.message);
+            }
+        }
+
+        function populateTournamentSelect() {
+            const select = document.getElementById('tournamentSelect');
+            select.innerHTML = '<option value="">Choose a tournament...</option>';
+            
+            tournaments.forEach(tournament => {
+                const option = document.createElement('option');
+                option.value = tournament.id;
+                option.textContent = `${tournament.title} (${tournament.game_type}) - ${tournament.participant_count} players`;
+                select.appendChild(option);
+            });
+        }
+
+        async function loadTournamentParticipants() {
+            const tournamentId = document.getElementById('tournamentSelect').value;
+            
+            if (!tournamentId) {
+                document.getElementById('tournamentInfo').style.display = 'none';
+                document.getElementById('participantsSection').style.display = 'none';
+                document.getElementById('generateBtn').disabled = true;
+                return;
+            }
+
+            selectedTournament = tournaments.find(t => t.id == tournamentId);
+            
+            // Show tournament info
+            document.getElementById('tournamentInfo').style.display = 'block';
+            document.getElementById('tournamentDetails').innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div><strong>Game:</strong> ${selectedTournament.game_type}</div>
+                    <div><strong>Players:</strong> ${selectedTournament.participant_count}/${selectedTournament.max_participants}</div>
+                    <div><strong>Status:</strong> ${selectedTournament.status}</div>
+                    <div><strong>Organizer:</strong> ${selectedTournament.organizer_name}</div>
+                </div>
+            `;
+
+            // Load participants
+            try {
+                const response = await fetch(`/api/ai/tournament/${tournamentId}/participants`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    participants = data.participants;
+                    displayParticipants();
+                    document.getElementById('generateBtn').disabled = participants.length < 4;
+                } else {
+                    showError('Failed to load participants: ' + data.error);
+                }
+            } catch (error) {
+                showError('Error loading participants: ' + error.message);
+            }
+        }
+
+        function displayParticipants() {
+            const container = document.getElementById('participantsList');
+            container.innerHTML = '';
+            
+            participants.forEach(participant => {
+                const card = document.createElement('div');
+                card.className = 'participant-card';
+                
+                const skillPercentage = Math.min(100, participant.skill_rating);
+                
+                card.innerHTML = `
+                    <div class="participant-name">${participant.username}</div>
+                    ${participant.team_name ? `<div style="color: #fc5c7d; font-size: 0.9rem; margin-bottom: 0.5rem;">Team: ${participant.team_name}</div>` : ''}
+                    <div class="participant-stats">
+                        <div class="stat-item">
+                            <span>Wins:</span>
+                            <span class="stat-value">${participant.wins}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Matches:</span>
+                            <span class="stat-value">${participant.total_matches}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Win Rate:</span>
+                            <span class="stat-value">${participant.win_rate}%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Avg Score:</span>
+                            <span class="stat-value">${participant.avg_score}</span>
+                        </div>
+                    </div>
+                    <div class="skill-rating">
+                        <div style="color: #6a82fb; font-size: 0.9rem; margin-bottom: 0.2rem;">
+                            AI Skill Rating: ${participant.skill_rating}/100
+                        </div>
+                        <div class="skill-bar">
+                            <div class="skill-fill" style="width: ${skillPercentage}%"></div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+            
+            document.getElementById('participantsSection').style.display = 'block';
+        }
+
+        async function generateAIBracket() {
+            if (!selectedTournament || participants.length < 4) {
+                showError('Please select a tournament with at least 4 participants');
+                return;
+            }
+            
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>AI is analyzing players and generating optimal bracket...';
+            
+            // Show loading
+            const container = document.getElementById('bracketContainer');
+            container.style.display = 'block';
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    AI is processing player statistics and generating intelligent bracket...
+                    <div style="margin-top: 1rem; color: #fc5c7d; font-size: 0.9rem;">
+                        Analyzing ${participants.length} players • Calculating win probabilities • Optimizing matchups
+                    </div>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch('/api/ai/generate-bracket', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        tournament_id: selectedTournament.id,
+                        bracket_type: document.getElementById('bracketType').value
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayAIBracket(data);
+                    btn.innerHTML = '🤖 Generate New AI Bracket';
+                } else {
+                    showError('Failed to generate bracket: ' + data.error);
+                    btn.innerHTML = '🤖 Generate AI-Powered Bracket';
+                }
+                
+            } catch (error) {
+                showError('Error generating bracket: ' + error.message);
+                btn.innerHTML = '🤖 Generate AI-Powered Bracket';
+            }
+            
+            btn.disabled = false;
+        }
+
+        function displayAIBracket(data) {
+            const { tournament, bracket } = data;
+            const { rounds, predicted_champion } = bracket;
+            
+            let bracketHTML = `
+                <div style="text-align: center; margin-bottom: 2rem; padding: 1.5rem; background: linear-gradient(45deg, rgba(106, 130, 251, 0.1), rgba(252, 92, 125, 0.1)); border-radius: 10px;">
+                    <h2 style="color: #fff; margin: 0 0 0.5rem 0;">${tournament.title}</h2>
+                    <p style="color: #6a82fb; margin: 0;">AI-Generated ${tournament.game_type} Tournament Bracket</p>
+                </div>
+            `;
+            
+            // Display rounds
+            rounds.forEach((round, index) => {
+                bracketHTML += `
+                    <div class="bracket-round">
+                        <div class="round-title">${round.round_name}</div>
+                        <div class="matches-grid">
+                `;
+                
+                round.matches.forEach(match => {
+                    if (match.bye_round) {
+                        bracketHTML += `
+                            <div class="match-card">
+                                <div class="match-players">
+                                    <div class="player">
+                                        <span class="player-name">${match.player1.username}</span>
+                                        <span class="win-probability">BYE</span>
+                                    </div>
+                                </div>
+                                <div class="ai-prediction">
+                                    <strong>AI Analysis:</strong> ${match.ai_analysis}
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        bracketHTML += `
+                            <div class="match-card">
+                                <div class="match-players">
+                                    <div class="player">
+                                        <span class="player-name">${match.player1.username}</span>
+                                        <span class="win-probability">${match.player1_win_prob}%</span>
+                                    </div>
+                                    <div class="player">
+                                        <span class="player-name">${match.player2.username}</span>
+                                        <span class="win-probability">${match.player2_win_prob}%</span>
+                                    </div>
+                                </div>
+                                <div class="ai-prediction">
+                                    <strong>AI Analysis:</strong> ${match.ai_analysis}
+                                </div>
+                                <div style="margin-top: 0.5rem; text-align: center; padding: 0.3rem; background: rgba(106, 130, 251, 0.1); border-radius: 5px; font-size: 0.9rem; color: #6a82fb;">
+                                    <strong>Predicted Winner:</strong> ${match.predicted_winner.username}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                bracketHTML += `</div></div>`;
+            });
+            
+            // Display predicted champion
+            if (predicted_champion) {
+                bracketHTML += `
+                    <div style="text-align: center; margin-top: 2rem; padding: 2rem; background: linear-gradient(45deg, #6a82fb, #fc5c7d); border-radius: 15px;">
+                        <h2 style="color: white; margin: 0;">🏆 AI Predicted Champion</h2>
+                        <h3 style="color: white; margin: 0.5rem 0;">${predicted_champion.username}</h3>
+                        <div style="color: white; margin: 0.5rem 0;">
+                            <div>Skill Rating: ${predicted_champion.skill_rating}/100</div>
+                            <div>Win Rate: ${predicted_champion.win_rate}%</div>
+                        </div>
+                        <p style="color: white; margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+                            Based on historical performance and AI analysis
+                        </p>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('bracketContainer').innerHTML = bracketHTML;
+        }
+
+        function showError(message) {
+            // Create error display with helpful instructions
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = `
+                position: fixed; top: 20px; right: 20px; z-index: 9999;
+                background: linear-gradient(45deg, #e74c3c, #c0392b);
+                color: white; padding: 1rem 1.5rem; border-radius: 8px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-width: 350px;
+            `;
+            
+            if (message.includes('Cannot connect to server') || message.includes('Failed to fetch')) {
+                errorDiv.innerHTML = `
+                    <div><strong>🚨 Server Not Running</strong></div>
+                    <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                        Please start the Flask server:
+                    </div>
+                    <div style="margin-top: 0.3rem; font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 0.3rem; border-radius: 3px;">
+                        Double-click start_server.bat<br>
+                        or run: python app.py
+                    </div>
+                `;
+            } else {
+                errorDiv.textContent = message;
+            }
+            
+            document.body.appendChild(errorDiv);
+            
+            // Remove after 8 seconds (longer for server instructions)
+            setTimeout(() => {
+                if (errorDiv.parentNode) {
+                    errorDiv.parentNode.removeChild(errorDiv);
+                }
+            }, 8000);
+        }
+    </script>
+</body>
+</html>
