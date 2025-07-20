@@ -721,17 +721,17 @@ class UserConnectionsCRUD {
             if (incomingPending.length > 0) {
                 content += '<h3 style="color: #6a82fb; margin: 1rem 0 0.5rem 0; font-size: 1rem;">Requests Received</h3>';
                 content += incomingPending.map(request => `
-                    <li class="insta-card">
-                        <div class="user-avatar-small">${request.requester_username.charAt(0).toUpperCase()}</div>
-                        <div class="insta-content">
-                            <span class="insta-title">${request.requester_username}</span>
-                            <span class="insta-meta">Requested to follow ${new Date(request.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <div class="connection-actions">
-                            <button class="btn-small btn-success accept-request-btn" data-connection-id="${request.id}">Accept</button>
-                            <button class="btn-small btn-danger reject-request-btn" data-connection-id="${request.id}">Reject</button>
-                        </div>
-                    </li>
+                        <li class="insta-card">
+                            <div class="user-avatar-small">${request.requester_username.charAt(0).toUpperCase()}</div>
+                            <div class="insta-content">
+                                <span class="insta-title">${request.requester_username}</span>
+                                <span class="insta-meta">Requested to follow ${new Date(request.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <div class="connection-actions">
+                                <button class="btn-small btn-success accept-request-btn" data-connection-id="${request.id}">Accept</button>
+                                <button class="btn-small btn-danger reject-request-btn" data-connection-id="${request.id}">Reject</button>
+                            </div>
+                        </li>
                 `).join('');
                 console.log(`✅ DEBUG: Displayed ${incomingPending.length} incoming pending requests`);
             }

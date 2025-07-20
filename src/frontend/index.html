@@ -7,38 +7,21 @@
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-    <n        } catch (error) {
-          console.error('❌ Error loading pending requests:', error);
-          pendingDiv.innerHTML = `
-            <div class="loading-message">
-              <p>📬 Friend requests will appear here</p>
-              <p style="font-size: 0.8rem; color: #888;">Start the backend server to see incoming requests</p>
-              <p style="font-size: 0.8rem; color: #ff6b6b;">Error: ${error.message}</p>
-            </div>
-          `;
-        }"navbar" aria-label="Main Navigation">
-      <div class="nav-inner">
-        <span class="nav-logo">GameVibe Arena</span>
-        <button class="nav-hamburger" id="navHamburger" aria-label="Open menu" aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
-        <div class="nav-links" id="navLinks"></div>
-        <div class="nav-auth" id="navAuth"></div>
+    <nav class="navbar" aria-label="Main Navigation">
+    <div class="nav-inner">
+      <span class="nav-logo">GameVibe Arena</span>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link" tabindex="0">Home</a>
+        <a href="tournaments.html" class="nav-link" tabindex="0">Tournaments</a>
+        <a href="social.html" class="nav-link active" aria-current="page" tabindex="0">Social</a>
+        <a href="profile.html" class="nav-link" tabindex="0">Profile</a>
+        <a href="notifications.html" class="nav-link" tabindex="0">Notifications</a>
       </div>
+    </div>
+  </nav>
     </nav>
     <main class="dashboard-main">
-      <div id="serverNotification" class="server-notification" style="display: none;">
-        <div class="notification-content">
-          <h3>🚀 Start Your Backend Server</h3>
-          <p>To use User Connections and all features, please start the backend server:</p>
-          <div class="server-instructions">
-            <p><strong>Option 1:</strong> Double-click <code>start_server.bat</code> in your FYP folder</p>
-            <p><strong>Option 2:</strong> Open Command Prompt → <code>cd c:\FYP</code> → <code>python backend_api.py</code></p>
-          </div>
-          <button class="close-notification" onclick="document.getElementById('serverNotification').style.display='none'">✕</button>
-        </div>
-      </div>
-      <section class="hero-section">
+          <section class="hero-section">
         <h1>Welcome, <span class="username">GamerTag123</span>!</h1>
         <p class="tagline">Unleash your skills. Connect. Compete. Celebrate.</p>
       </section>

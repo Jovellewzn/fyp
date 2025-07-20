@@ -9,7 +9,7 @@ import random
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend
 
-DATABASE = 'tournament_app.db'
+DATABASE = '../../tournament_app.db'
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -68,6 +68,21 @@ def get_all_users():
     conn.close()
     
     return jsonify([dict(row) for row in users])
+
+@app.route('/api/user/<userid>', methods=['GET'])
+def profile(userid):
+    conn = get_db_connection()
+    user = conn.execute('''
+        SELECT id, username, bio, last_login
+        FROM users
+        WHERE id = ?
+    ''', (userid,)).fetchone()
+    conn.close()
+    
+    if user:
+        return jsonify(dict(user))
+    else:
+        return jsonify({'error': 'User not found'}), 404
 
 # ==================== TOURNAMENT PARTICIPANTS CRUD ====================
 
@@ -331,7 +346,7 @@ def follow_user():
     data = request.get_json()
     follower_id = data.get('follower_id')
     following_id = data.get('following_id')
-    
+
     conn = get_db_connection()
     
     try:
@@ -756,4 +771,4 @@ def health_check():
     return jsonify({'status': 'healthy', 'timestamp': datetime.datetime.now().isoformat()})
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, exclude_patterns=['**/*.db', '*.sqlite*'])
