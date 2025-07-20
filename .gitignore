@@ -1,2 +1,4 @@
 */tournament_app.db
 
+# Node modules
+node_modules/

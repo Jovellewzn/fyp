@@ -4,17 +4,15 @@ const currentUser = 1;
 // Fetch user connections from the API
 async function fetchUserConnections() {
     try {
-        const response = await fetch(`${API_BASE}/users/${currentUser}/connections`);
-
+        const response = await fetch(`${API_BASE}/connections/users/${currentUser}`);
         const data = await response.json();
-        console.log("1", data);
 
         updateFollowersTab(data.followers);
         updateFollowingTab(data.following);
         updatePendingTab(data.incoming_pending, data.outgoing_pending);
 
-        const data2 = await getAllUsers();
-        console.log("2", data2);
+        const response2 = await fetch(`${API_BASE}/users`);
+        const data2 = await response2.json();
         updateDiscoverUsersTab(data.following, data.incoming_pending, data.outgoing_pending, data2);
 
     } catch (error) {
@@ -47,22 +45,17 @@ async function fetchPosts() {
     }
 }
 
-
-
-
-//prfoile display
+// Profile display
 async function fetchUserProfile(userId) {
     try {
-        const response = await fetch(`${API_BASE}/user/${userId}`);
+        const response = await fetch(`${API_BASE}/users/${userId}`);
         const user = await response.json();
-        console.log("User Profile:", user);
 
         updateProfileDisplay(user);
     } catch (error) {
         console.error('❌ DEBUG: Failed to fetch user profile:', error);
     }
 }
-
 
 // Function to remove a connection
 // This function will be called when the user clicks the "Remove" button on a connection    
@@ -83,21 +76,18 @@ async function removeConnection(connectionId) {
 }
 
 
-
 // Function to update the connection status (accept/reject)
 async function updateConnectionStatus(connectionId, status) {
     try {
-        const response = await fetch(`${API_BASE}/connections/${connectionId}/status`, {
-            method: 'PUT',
+        const response = await fetch(`${API_BASE}/connections/${connectionId}`, {
+            method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ status: status })
         });
 
-        alert(`Connection ${status} successfully!`);
-        
-
+        fetchUserConnections();
     } catch (error) {
         console.error('❌ DEBUG: Failed to update connection status:', error);
         alert(`Failed to ${status} connection: ${error.message}`);
@@ -108,14 +98,13 @@ async function updateConnectionStatus(connectionId, status) {
 // This function will be called when the user clicks the "Follow" button on a user in the discover tab
 async function followUser(userId) {
     try {
-        const response = await fetch(`${API_BASE}/users/follow`, {
+        const response = await fetch(`${API_BASE}/connections/follow/${currentUser}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                follower_id: currentUser,
-                following_id: userId
+                followingId: userId
             })
         });
 
@@ -125,19 +114,6 @@ async function followUser(userId) {
     }
 }
 
-// Function to get all users for the discover tab
-// This function fetches all users from the API and filters out the current user
-async function getAllUsers() {
-    try {
-        const response = await fetch(`${API_BASE}/users`);
-        const data = await response.json();
-        return data;
-
-    } catch (error) {
-        console.error('❌ Error fetching all users:', error);
-        return [];
-    }
-}
 
 // Function to update the followers tab with fetched data
 // This function updates the followers tab with the data fetched from the API
@@ -238,8 +214,10 @@ function updatePendingTab(upcoming_pending, outgoing_pending) {
 function updateDiscoverUsersTab(followingList, upcoming_pending, outgoing_pending, discoveruserList) {
     const discoverList = document.getElementById('discover-list');
     discoverList.innerHTML = ''; // Clear existing list
+    console.log("followingList:", followingList);
     discoveruserList.forEach((user) => {
         const user_id = user.id;
+        if (user_id == currentUser) return; 
         if (followingList.some((following) => following.following_id === user_id)) return;
         if (upcoming_pending.some((pending) => pending.follower_id === user_id)) return;
         if (outgoing_pending.some((pending) => pending.following_id === user_id)) return;
@@ -268,8 +246,7 @@ function updateProfileDisplay(user) {
     profileBio.innerHTML = user.bio ; // Clear existing content
 
     const lastLogin = document.getElementById('profile-lastlogin');
-    lastLogin.innerHTML = `Last Login: `; // Clear existing content
-
+    lastLogin.innerHTML = `Last Login: ${!user.last_login ? 'Never' : user.last_login}`; // Clear existing content
 }
 
 function updateTournamentsTab(tournaments) {
