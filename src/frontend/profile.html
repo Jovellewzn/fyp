@@ -99,12 +99,15 @@
       margin-top: 1.5rem;
     }
     .profile-header {
+      flex-direction: column;
+      text-align: center; 
       display: flex;
       align-items: center;
       gap: 1.5rem;
       width: 100%;
       max-width: 600px;
       justify-content: flex-start;
+      position:relative;
     }
     .profile-avatar {
       width: 100px;
@@ -117,6 +120,8 @@
     }
     .profile-info {
       flex: 1;
+      text-align:center;
+
     }
     .profile-username {
       margin: 0 0 0.3rem 0;
@@ -131,6 +136,17 @@
       margin: 0 0 0.5rem 0;
       font-size: 1rem;
       color: #e0e0e0;
+    }
+
+    .profile-bio-section {
+      margin: 0.5rem 0;
+    }
+
+    .bio-label {
+      font-weight: 600;
+      color: #fff;
+      font-size: 0.9rem;
+      margin-right: 0.5rem;
     }
     .profile-lastlogin {
       font-size: 0.95rem;
@@ -262,6 +278,8 @@
       gap: 1.2rem;
       position: relative;
       z-index: 1;
+      max-width: 1200px;    
+      margin: 0 auto;   
     }
     /* Instagram-like card styles for lists */
     .insta-list {
@@ -347,14 +365,15 @@
 
     .connections-tab-btn {
       background: rgba(106, 130, 251, 0.1);
-      border: 1px solid rgba(106, 130, 251, 0.3);
+      border: none;
       color: #fff;
       padding: 0.5rem 1rem;
-      border-radius: 8px;
+      border-radius: 8px 8px 0 0;
       cursor: pointer;
       font-size: 0.9rem;
       font-weight: 500;
       transition: all 0.3s;
+      border-bottom: 3px solid transparent;
     }
 
     .connections-tab-btn:hover,
@@ -604,6 +623,53 @@
       font-style: italic;
       font-size: 1.1rem;
     }
+
+    /* Form Styles for Modal */
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #fff;
+      font-weight: 500;
+      font-size: 1rem;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1rem;
+      transition: border-color 0.3s, background-color 0.3s;
+      box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #6a82fb;
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 0 3px rgba(106, 130, 251, 0.2);
+    }
+
+    .form-group input::placeholder,
+    .form-group textarea::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+      margin-top: 2rem;
+    }
+
     @media (max-width: 700px) {
       .nav-inner {
         padding: 0 0.5rem;
@@ -639,6 +705,7 @@
       to { opacity: 1; transform: translateY(0); }
     }
   </style>
+  
 </head>
 <body>
   <nav aria-label="Main Navigation">
@@ -655,17 +722,22 @@
   </nav>
   <main class="profile-main">
     <section class="profile-glass" aria-label="User Profile">
-      <div class="profile-header">
-        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User Avatar" class="profile-avatar">
+      <div class="profile-header" style="position:relative;">
+        <button id="deleteAccountTopBtn" class="btn btn-outline-danger" title="Delete Account" style="position:absolute;top:0;right:0;padding:0.4rem 1.1rem;font-size:1rem;font-weight:600;border:2px solid #e74c3c;background:transparent;color:#e74c3c;border-radius:20px;z-index:2;transition:background 0.2s, color 0.2s;">Delete</button>
+        <img src="https://via.placeholder.com/100x100/6a82fb/ffffff?text=👤" alt="User Avatar" class="profile-avatar" id="profileAvatar">
         <div class="profile-info">
           <h1 class="profile-username">GamerTag123</h1>
-          <p class="profile-bio">Competitive gamer. FPS enthusiast. Always up for a challenge!</p>
+          <div class="profile-bio-section">
+            <label class="bio-label">Bio:</label>
+            <p class="profile-bio">Competitive gamer. FPS enthusiast. Always up for a challenge!</p>
+          </div>
           <div class="profile-lastlogin">Last login: 2025-07-12 14:30</div>
         </div>
       </div>
+
       <div class="profile-actions">
         <button class="btn message" tabindex="0">Message</button>
-        <button class="btn edit" tabindex="0">Edit Profile</button>
+        <button class="btn edit" id="editProfileBtn" tabindex="0">Edit Profile</button>
       </div>
       <div class="profile-stats" aria-label="GameHub Stats">
         <div class="stat">
@@ -682,37 +754,45 @@
         <span class="badge"><span class="badge-icon" aria-hidden="true">🔥</span> Streak 10 <span class="badge-desc">10 wins in a row</span></span>
         <span class="badge"><span class="badge-icon" aria-hidden="true">🎯</span> Sharpshooter <span class="badge-desc">Highest accuracy</span></span>
       </div>
+  </section>
+
+     
       <nav class="profile-tabs" aria-label="Profile Sections">
-        <button class="tab-btn active" tabindex="0" aria-controls="tab-tournaments">Tournaments</button>
-        <button class="tab-btn" tabindex="0" aria-controls="tab-friends">Friends & Followers</button>
+        <button class="tab-btn active" tabindex="0" aria-contrls="tab-tournaments">Tournaments</button>
+        <button class="tab-btn" tabindex="0" aria-controls=o"tab-friends">Friends & Followers</button>
         <button class="tab-btn" tabindex="0" aria-controls="tab-posts">Posts</button>
       </nav>
-      <section class="tab-content" id="tab-tournaments" aria-label="Tournaments Joined">
-        <ul class="insta-list">
-          <li class="insta-card">
-            <img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=facearea&w=256&h=256" alt="Tournament Logo" class="insta-thumb">
-            <div class="insta-content">
-              <span class="insta-title">Summer Showdown 2025</span>
-              <span class="insta-meta">Joined: 2025-06-20 · Status: Ongoing</span>
-            </div>
-            <span class="insta-action">View</span>
-          </li>
-          <li class="insta-card">
-            <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=facearea&w=256&h=256" alt="Tournament Logo" class="insta-thumb">
-            <div class="insta-content">
-              <span class="insta-title">Valorant Masters</span>
-              <span class="insta-meta">Joined: 2025-05-15 · Status: Finished</span>
-            </div>
-            <span class="insta-action">View</span>
-          </li>
-        </ul>
+      <section id="tab-tournaments" class="tab-content" aria-label="Tournaments Joined">
+          <ul id="tournamentsList" class="insta-list">
+            <section class="tab-content" id="tab-tournaments" aria-label="Tournaments Joined">
+                <ul class="insta-list">
+                <li class="insta-card">
+                    <img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=facearea&w=256&h=256" alt="Tournament Logo" class="insta-thumb">
+                    <div class="insta-content">
+                    <span class="insta-title">Summer Showdown 2025</span>
+                    <span class="insta-meta">Joined: 2025-06-20 · Status: Ongoing</span>
+                    </div>
+                    <span class="insta-action">View</span>
+                </li>
+                <li class="insta-card">
+                    <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=facearea&w=256&h=256" alt="Tournament Logo" class="insta-thumb">
+                    <div class="insta-content">
+                    <span class="insta-title">Valorant Masters</span>
+                    <span class="insta-meta">Joined: 2025-05-15 · Status: Finished</span>
+                    </div>
+                    <span class="insta-action">View</span>
+                </li>
+                </ul>
+            </section>
+          </ul>
       </section>
+
       <section class="tab-content" id="tab-friends" style="display:none" aria-label="Friends and Followers">
         <div class="connections-tabs">
           <button class="connections-tab-btn active" data-tab="followers">Followers</button>
           <button class="connections-tab-btn" data-tab="following">Following</button>
           <button class="connections-tab-btn" data-tab="pending">Pending</button>
-          <button class="connections-tab-btn discover-users-btn">Discover Users</button>
+          <button class="connections-tab-btn" data-tab="discover">Discover Users</button>
         </div>
 
         <div class="connections-content" id="followers-content">
@@ -732,25 +812,17 @@
             <p class="no-connections">Loading pending connections...</p>
           </ul>
         </div>
+
+        <div class="connections-content" id="discover-content" style="display:none">
+          <ul class="insta-list" id="discover-list">
+            <p class="no-connections">Loading discover connections...</p>
+          </ul>
+        </div>
+
       </section>
-      <section class="tab-content" id="tab-posts" style="display:none" aria-label="Recent Posts">
-        <ul class="insta-list">
-          <li class="insta-card">
-            <img src="https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=facearea&w=256&h=256" alt="Post Image" class="insta-thumb">
-            <div class="insta-content">
-              <span class="insta-title">Just hit a new high score in Rocket League! 🚀</span>
-              <span class="insta-meta">2025-07-09 · 120 Likes · 8 Comments</span>
-            </div>
-            <span class="insta-action">Like</span>
-          </li>
-          <li class="insta-card">
-            <img src="https://images.unsplash.com/photo-1503676382389-4809596d5290?auto=format&fit=facearea&w=256&h=256" alt="Post Image" class="insta-thumb">
-            <div class="insta-content">
-              <span class="insta-title">Looking for a team for the next tournament!</span>
-              <span class="insta-meta">2025-07-07 · 98 Likes · 5 Comments</span>
-            </div>
-            <span class="insta-action">Comment</span>
-          </li>
+     <section id="tab-posts" class="tab-content" aria-label="Recent Posts" style="display:none">
+        <ul id="postsList" class="insta-list">
+          <p id="noPostsMsg">No posts yet.</p>
         </ul>
       </section>
       <div class="ai-suggestion">
@@ -759,30 +831,41 @@
       </div>
     </section>
   </main>
-  <script src="scripts/app.js"></script>
-  <script>
-    // Tab switching logic, keyboard accessible
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabContents = [
-      document.getElementById('tab-tournaments'),
-      document.getElementById('tab-friends'),
-      document.getElementById('tab-posts')
-    ];
-    tabBtns.forEach((btn, idx) => {
-      btn.addEventListener('click', () => {
-        tabBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        tabContents.forEach((c, i) => c.style.display = i === idx ? '' : 'none');
-        
-        // If switching to friends tab, show followers by default
-        if (idx === 1 && window.userConnectionsCRUD) {
-          window.userConnectionsCRUD.switchConnectionsTab('followers');
-        }
-      });
-      btn.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') btn.click();
-      });
-    });
-  </script>
+
+  <!-- Edit Profile Modal -->
+  <div id="editProfileModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Edit Profile</h2>
+        <button id="closeEditProfile" class="close-modal">&times;</button>
+      </div>
+      <form id="editProfileForm" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="editProfilePicture">Profile Picture:</label>
+          <div class="profile-picture-upload" style="display: flex; align-items: center; gap: 1rem;">
+            <img id="profilePicturePreview" src="https://via.placeholder.com/80x80/6a82fb/ffffff?text=👤" alt="Profile Preview" style="width: 80px; height: 80px; border-radius: 50%; border: 2px solid #ddd; cursor: pointer; object-fit: cover;">
+            <input type="file" id="editProfilePicture" name="profilePicture" accept="image/*" style="display: none;">
+            <button type="button" id="uploadProfilePictureBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Choose Picture</button>
+            <button type="button" id="removeProfilePictureBtn" class="btn btn-danger" style="padding: 0.5rem 1rem;">Remove Picture</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="editUsername">Username:</label>
+          <input type="text" id="editUsername" name="username" required>
+        </div>
+        <div class="form-group">
+          <label for="editBio">Bio:</label>
+          <textarea id="editBio" name="bio" rows="3" placeholder="Tell us about yourself..."></textarea>
+        </div>
+        <div class="form-actions" style="margin-top:1rem; display:flex; gap:1rem; justify-content:flex-end;">
+          <button type="button" id="cancelEditProfile" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="scripts/constants.js"></script>
+  <script src="scripts/profile.js"></script>
 </body>
 </html>

@@ -1,0 +1,21 @@
+{
+  "name": "fyp",
+  "version": "1.0.0",
+  "description": "This project contains the frontend UI for the GameVibe Arena tournament social app. All source code is in the `src` folder.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^2.2.0",
+    "cookie-parser": "^1.4.7",
+    "multer": "^2.0.1",
+    "sqlite3": "^5.1.7"
+  }
+}
