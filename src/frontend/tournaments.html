@@ -142,7 +142,7 @@
       margin-right: 0.5rem;
     }
     .filter-bar select, .filter-bar input[type="date"] {
-      background: #232526;
+      background: rgba(35, 37, 38, 0.9);
       color: #fff;
       border: 1px solid #6a82fb;
       border-radius: 8px;
@@ -152,8 +152,355 @@
       outline: none;
       transition: border 0.2s;
     }
+
+    .filter-bar select option {
+      background: rgba(35, 37, 38, 0.95);
+      color: #fff;
+      padding: 0.5rem;
+    }
     .filter-bar select:focus, .filter-bar input[type="date"]:focus {
       border: 2px solid #fc5c7d;
+    }
+
+    /* Tournament Creation Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      backdrop-filter: blur(8px);
+      overflow-y: auto;
+      padding: 1rem;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .tournament-modal {
+      background: var(--glass-bg);
+      border-radius: var(--card-radius);
+      backdrop-filter: blur(var(--glass-blur));
+      border: 1.5px solid rgba(106, 130, 251, 0.3);
+      padding: 2rem;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      position: relative;
+      margin: auto;
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid rgba(106, 130, 251, 0.2);
+      padding-bottom: 1rem;
+    }
+
+    .modal-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: var(--gradient-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: #999;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .tournament-form {
+      display: grid;
+      gap: 1.2rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      font-weight: 600;
+      color: #fff;
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1.5px solid rgba(106, 130, 251, 0.3);
+      border-radius: 12px;
+      padding: 0.8rem;
+      color: #fff;
+      font-size: 1rem;
+      transition: all 0.2s;
+      outline: none;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-group select {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .form-group select option {
+      background: rgba(30, 30, 30, 0.95);
+      color: #fff;
+      padding: 0.5rem;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: #6a82fb;
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 0 3px rgba(106, 130, 251, 0.1);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+      font-family: inherit;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(106, 130, 251, 0.2);
+    }
+
+    .btn {
+      padding: 0.8rem 1.5rem;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .btn-primary {
+      background: var(--gradient-main);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(106, 130, 251, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(106, 130, 251, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .form-hint {
+      font-size: 0.85rem;
+      color: #999;
+      margin-top: 0.25rem;
+    }
+
+    @media (max-width: 768px) {
+      .tournament-modal {
+        width: 95%;
+        padding: 1.5rem;
+        max-height: 95vh;
+        margin: 0.5rem;
+      }
+      
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      
+      .form-actions {
+        flex-direction: column;
+      }
+    }
+
+    /* Additional modal positioning fixes */
+    .modal-overlay {
+      box-sizing: border-box;
+    }
+
+    .tournament-modal {
+      box-sizing: border-box;
+    }
+
+    /* Ensure modal is visible on all screen sizes */
+    @media (max-height: 600px) {
+      .modal-overlay {
+        align-items: flex-start;
+        padding-top: 2rem;
+      }
+      
+      .tournament-modal {
+        max-height: calc(100vh - 4rem);
+      }
+    }
+
+    /* Tournament Card 3-Dot Menu */
+    .tournament-card {
+      position: relative;
+    }
+
+    .tournament-menu {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 100;
+    }
+
+    .menu-trigger {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #fff;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      transition: all 0.2s;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .menu-trigger:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.1);
+    }
+
+    .menu-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur));
+      border: 1px solid rgba(106, 130, 251, 0.3);
+      border-radius: 8px;
+      min-width: 120px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      display: none;
+      z-index: 1000;
+      margin-top: 4px;
+    }
+
+    .menu-dropdown.show {
+      display: block;
+      animation: fadeInDown 0.2s ease-out;
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .menu-item {
+      padding: 0.75rem 1rem;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .menu-item:first-child {
+      border-radius: 8px 8px 0 0;
+    }
+
+    .menu-item:last-child {
+      border-radius: 0 0 8px 8px;
+    }
+
+    .menu-item:only-child {
+      border-radius: 8px;
+    }
+
+    .menu-item:hover {
+      background: rgba(106, 130, 251, 0.2);
+    }
+
+    .menu-item.delete {
+      color: #ff6b6b;
+    }
+
+    .menu-item.delete:hover {
+      background: rgba(255, 107, 107, 0.2);
+    }
+
+    .menu-item i {
+      font-size: 0.8rem;
+      width: 16px;
+    }
+
+    /* Only show menu for tournaments owned by current user */
+    .tournament-card:not(.user-owned) .tournament-menu {
+      display: none;
     }
     .tournaments-grid {
       width: 100%;
@@ -225,6 +572,12 @@
     }
     .badge.completed {
       background: linear-gradient(90deg, #fc5c7d, #232526);
+    }
+    
+    .badge.organizer {
+      background: linear-gradient(135deg, #6a82fb, #fc5c7d);
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.3);
     }
     .tournament-actions {
       display: flex;
@@ -312,21 +665,117 @@
         <a href="notifications.html" class="nav-link" tabindex="0">Notifications</a>
       </div>
     </div>
+
+    <!-- Tournament Creation Modal -->
+    <div class="modal-overlay" id="tournamentModal">
+      <div class="tournament-modal">
+        <div class="modal-header">
+          <h2 class="modal-title">Create New Tournament</h2>
+          <button class="modal-close" onclick="closeTournamentModal()">&times;</button>
+        </div>
+        
+        <form class="tournament-form" id="tournamentForm">
+          <div class="form-group">
+            <label for="tournamentTitle">Tournament Title*</label>
+            <input type="text" id="tournamentTitle" name="title" required maxlength="100" placeholder="e.g., Spring Championship 2024">
+            <div class="form-hint">Enter a catchy and descriptive tournament name</div>
+          </div>
+
+          <div class="form-group">
+            <label for="tournamentDescription">Description</label>
+            <textarea id="tournamentDescription" name="description" placeholder="Describe your tournament, rules, and any special instructions..." maxlength="500"></textarea>
+            <div class="form-hint">Optional details about the tournament (max 500 characters)</div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="gameType">Game Type*</label>
+              <select id="gameType" name="game_type" required>
+                <option value="">Select a game</option>
+                <option value="Valorant">Valorant</option>
+                <option value="CS2">Counter-Strike 2</option>
+                <option value="League of Legends">League of Legends</option>
+                <option value="Dota 2">Dota 2</option>
+                <option value="Rocket League">Rocket League</option>
+                <option value="FIFA">FIFA</option>
+                <option value="Fortnite">Fortnite</option>
+                <option value="Apex Legends">Apex Legends</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="maxParticipants">Max Participants</label>
+              <input type="number" id="maxParticipants" name="max_participants" min="2" max="1000" placeholder="e.g., 32">
+              <div class="form-hint">Leave empty for unlimited participants</div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="entryFee">Entry Fee ($)</label>
+              <input type="number" id="entryFee" name="entry_fee" min="0" step="0.01" value="0" placeholder="0.00">
+              <div class="form-hint">Set to 0 for free tournaments</div>
+            </div>
+
+            <div class="form-group">
+              <label for="prizePool">Prize Pool ($)</label>
+              <input type="number" id="prizePool" name="prize_pool" min="0" step="0.01" value="0" placeholder="0.00">
+              <div class="form-hint">Total prize money available</div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="startDate">Start Date & Time*</label>
+              <input type="datetime-local" id="startDate" name="start_date" required>
+              <div class="form-hint">When the tournament begins</div>
+            </div>
+
+            <div class="form-group">
+              <label for="endDate">End Date & Time</label>
+              <input type="datetime-local" id="endDate" name="end_date">
+              <div class="form-hint">Optional - when tournament ends</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="tournamentStatus">Tournament Status*</label>
+            <select id="tournamentStatus" name="status" required>
+              <option value="">Select status</option>
+              <option value="upcoming" selected>Upcoming</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+            </select>
+            <div class="form-hint">Current status of the tournament</div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeTournamentModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create Tournament</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </nav>
   <main class="tournaments-main">
     <header class="tournaments-header">
       <h1 class="tournaments-title">Tournaments</h1>
-      <div style="display: flex; gap: 1rem; align-items: center;">
-        <a href="#create-tournament" class="create-tournament-btn">Create Tournament</a>
-      </div>
+      <a href="#create-tournament" class="create-tournament-btn" id="create-tournament-btn">Create Tournament</a>
     </header>
     <form class="filter-bar" aria-label="Filter Tournaments">
       <label for="game_type">Game Type:</label>
       <select id="game_type" name="game_type">
         <option value="">All</option>
-        <option value="FPS">FPS</option>
-        <option value="Sports">Sports</option>
-        <option value="Battle Royale">Battle Royale</option>
+        <option value="Valorant">Valorant</option>
+        <option value="CS2">Counter-Strike 2</option>
+        <option value="League of Legends">League of Legends</option>
+        <option value="Dota 2">Dota 2</option>
+        <option value="Rocket League">Rocket League</option>
+        <option value="FIFA">FIFA</option>
+        <option value="Fortnite">Fortnite</option>
+        <option value="Apex Legends">Apex Legends</option>
+        <option value="Other">Other</option>
       </select>
       <label for="status">Status:</label>
       <select id="status" name="status">
@@ -342,62 +791,7 @@
       <button type="submit" class="tournament-btn">Filter</button>
     </form>
     <section class="tournaments-grid" aria-label="Tournaments List">
-      <!-- Placeholder: List tournaments from DB (CRUD: Read) -->
-      <article class="tournament-card" data-tournament-id="1">
-        <div class="tournament-title">Valorant Masters</div>
-        <div class="tournament-desc">The ultimate FPS tournament for Valorant pros. Compete for glory and cash!</div>
-        <div class="tournament-meta">FPS | Entry Fee: $10 | Prize: $2,000 | Max: 64 | 2025-07-20 to 2025-07-22</div>
-        <div class="tournament-badges">
-          <span class="badge active">Active</span>
-        </div>
-        <div class="tournament-actions">
-          <a href="#details" class="tournament-btn view-details-btn">View Details</a>
-          <button class="tournament-btn join-btn">Join</button>
-          <button class="tournament-btn view-match-results-btn" data-tournament-id="1">Match Results</button>
-          <button class="tournament-btn view-discussions-btn" data-tournament-id="1">Discussions</button>
-        </div>
-      </article>
-      <article class="tournament-card" data-tournament-id="2">
-        <div class="tournament-title">Rocket League Cup</div>
-        <div class="tournament-desc">Show off your car soccer skills in this high-flying Rocket League event.</div>
-        <div class="tournament-meta">Sports | Entry Fee: $5 | Prize: $1,000 | Max: 32 | 2025-07-25 to 2025-07-26</div>
-        <div class="tournament-badges">
-          <span class="badge upcoming">Upcoming</span>
-        </div>
-        <div class="tournament-actions">
-          <a href="#details" class="tournament-btn view-details-btn">View Details</a>
-          <button class="tournament-btn join-btn">Join</button>
-          <button class="tournament-btn view-match-results-btn" data-tournament-id="2">Match Results</button>
-          <button class="tournament-btn view-discussions-btn" data-tournament-id="2">Discussions</button>
-        </div>
-      </article>
-      <article class="tournament-card" data-tournament-id="3">
-        <div class="tournament-title">Apex Legends Showdown</div>
-        <div class="tournament-desc">Battle it out in the Apex arena for fame and fortune. Who will be champion?</div>
-        <div class="tournament-meta">Battle Royale | Entry Fee: $8 | Prize: $1,500 | Max: 48 | 2025-08-01 to 2025-08-03</div>
-        <div class="tournament-badges">
-          <span class="badge upcoming">Upcoming</span>
-        </div>
-        <div class="tournament-actions">
-          <a href="#details" class="tournament-btn view-details-btn">View Details</a>
-          <button class="tournament-btn join-btn">Join</button>
-          <button class="tournament-btn view-match-results-btn" data-tournament-id="3">Match Results</button>
-          <button class="tournament-btn view-discussions-btn" data-tournament-id="3">Discussions</button>
-        </div>
-      </article>
-      <article class="tournament-card" data-tournament-id="4">
-        <div class="tournament-title">Retro Smash</div>
-        <div class="tournament-desc">Classic games, big prizes. Relive the golden age of gaming!</div>
-        <div class="tournament-meta">Arcade | Entry Fee: $3 | Prize: $500 | Max: 16 | 2025-08-10 to 2025-08-10</div>
-        <div class="tournament-badges">
-          <span class="badge completed">Completed</span>
-        </div>
-        <div class="tournament-actions">
-          <a href="#details" class="tournament-btn view-details-btn">View Details</a>
-          <button class="tournament-btn view-match-results-btn" data-tournament-id="4">Match Results</button>
-          <button class="tournament-btn view-discussions-btn" data-tournament-id="4">Discussions</button>
-        </div>
-      </article>
+      <!-- Dynamic tournaments will be loaded here -->
     </section>
     <nav class="pagination" aria-label="Pagination">
       <button class="pagination-btn">&laquo; Prev</button>
@@ -405,6 +799,9 @@
       <button class="pagination-btn">Next &raquo;</button>
     </nav>
   </main>
-  <script src="scripts/app.js"></script>
+
+  <script src="scripts/constants.js"></script>
+  <script src="scripts/tournament.js"></script>
+
 </body>
 </html>

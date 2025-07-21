@@ -106,7 +106,8 @@
       gap: 1.5rem;
       width: 100%;
       max-width: 600px;
-      justify-content: center;
+      justify-content: flex-start;
+      position:relative;
     }
     .profile-avatar {
       width: 100px;
@@ -135,6 +136,17 @@
       margin: 0 0 0.5rem 0;
       font-size: 1rem;
       color: #e0e0e0;
+    }
+
+    .profile-bio-section {
+      margin: 0.5rem 0;
+    }
+
+    .bio-label {
+      font-weight: 600;
+      color: #fff;
+      font-size: 0.9rem;
+      margin-right: 0.5rem;
     }
     .profile-lastlogin {
       font-size: 0.95rem;
@@ -353,14 +365,15 @@
 
     .connections-tab-btn {
       background: rgba(106, 130, 251, 0.1);
-      border: 1px solid rgba(106, 130, 251, 0.3);
+      border: none;
       color: #fff;
       padding: 0.5rem 1rem;
-      border-radius: 8px;
+      border-radius: 8px 8px 0 0;
       cursor: pointer;
       font-size: 0.9rem;
       font-weight: 500;
       transition: all 0.3s;
+      border-bottom: 3px solid transparent;
     }
 
     .connections-tab-btn:hover,
@@ -610,6 +623,53 @@
       font-style: italic;
       font-size: 1.1rem;
     }
+
+    /* Form Styles for Modal */
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #fff;
+      font-weight: 500;
+      font-size: 1rem;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1rem;
+      transition: border-color 0.3s, background-color 0.3s;
+      box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #6a82fb;
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 0 3px rgba(106, 130, 251, 0.2);
+    }
+
+    .form-group input::placeholder,
+    .form-group textarea::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+      margin-top: 2rem;
+    }
+
     @media (max-width: 700px) {
       .nav-inner {
         padding: 0 0.5rem;
@@ -661,19 +721,38 @@
     </div>
   </nav>
   <main class="profile-main">
-  <section class="profile-glass" aria-label="User Profile">
-      <div class="profile-header">
-        <img src="assets/istockphoto-610003972-612x612.jpg" alt="User Avatar" class="profile-avatar">      
+    <section class="profile-glass" aria-label="User Profile">
+      <div class="profile-header" style="position:relative;">
+        <button id="deleteAccountTopBtn" class="btn btn-outline-danger" title="Delete Account" style="position:absolute;top:0;right:0;padding:0.4rem 1.1rem;font-size:1rem;font-weight:600;border:2px solid #e74c3c;background:transparent;color:#e74c3c;border-radius:20px;z-index:2;transition:background 0.2s, color 0.2s;">Delete</button>
+        <img src="https://via.placeholder.com/100x100/6a82fb/ffffff?text=👤" alt="User Avatar" class="profile-avatar" id="profileAvatar">
         <div class="profile-info">
-          <h1 id="profile-username" class="profile-username">Username</h1>
-          <p id="profile-bio" class="profile-bio">Bio goes here...</p>
-          <div id="profile-lastlogin" class="profile-lastlogin">Last login: 2025-07-12 14:30</div>
+          <h1 class="profile-username">GamerTag123</h1>
+          <div class="profile-bio-section">
+            <label class="bio-label">Bio:</label>
+            <p class="profile-bio">Competitive gamer. FPS enthusiast. Always up for a challenge!</p>
+          </div>
+          <div class="profile-lastlogin">Last login: 2025-07-12 14:30</div>
         </div>
       </div>
 
       <div class="profile-actions">
-        <button id="msgBtn"  class="btn message" tabindex="0">Message</button>
-        <button id="editBtn" class="btn edit"    tabindex="0">Edit Profile</button>
+        <button class="btn message" tabindex="0">Message</button>
+        <button class="btn edit" id="editProfileBtn" tabindex="0">Edit Profile</button>
+      </div>
+      <div class="profile-stats" aria-label="GameHub Stats">
+        <div class="stat">
+          <span class="stat-label">Total Hours Played</span>
+          <span class="stat-value">1,250</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Top Games</span>
+          <span class="stat-value">Valorant (500h), Apex Legends (400h), Rocket League (350h)</span>
+        </div>
+      </div>
+      <div class="profile-badges" aria-label="User Achievements">
+        <span class="badge"><span class="badge-icon" aria-hidden="true">🏆</span> Pro <span class="badge-desc">Top 1% in tournaments</span></span>
+        <span class="badge"><span class="badge-icon" aria-hidden="true">🔥</span> Streak 10 <span class="badge-desc">10 wins in a row</span></span>
+        <span class="badge"><span class="badge-icon" aria-hidden="true">🎯</span> Sharpshooter <span class="badge-desc">Highest accuracy</span></span>
       </div>
   </section>
 
@@ -745,10 +824,48 @@
         <ul id="postsList" class="insta-list">
           <p id="noPostsMsg">No posts yet.</p>
         </ul>
-        
       </section>
+      <div class="ai-suggestion">
+        <h2>AI Post Suggestion</h2>
+        <p>"Share your latest tournament experience or challenge a friend to a match!"</p>
+      </div>
+    </section>
+  </main>
 
-      </main>
+  <!-- Edit Profile Modal -->
+  <div id="editProfileModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Edit Profile</h2>
+        <button id="closeEditProfile" class="close-modal">&times;</button>
+      </div>
+      <form id="editProfileForm" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="editProfilePicture">Profile Picture:</label>
+          <div class="profile-picture-upload" style="display: flex; align-items: center; gap: 1rem;">
+            <img id="profilePicturePreview" src="https://via.placeholder.com/80x80/6a82fb/ffffff?text=👤" alt="Profile Preview" style="width: 80px; height: 80px; border-radius: 50%; border: 2px solid #ddd; cursor: pointer; object-fit: cover;">
+            <input type="file" id="editProfilePicture" name="profilePicture" accept="image/*" style="display: none;">
+            <button type="button" id="uploadProfilePictureBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Choose Picture</button>
+            <button type="button" id="removeProfilePictureBtn" class="btn btn-danger" style="padding: 0.5rem 1rem;">Remove Picture</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="editUsername">Username:</label>
+          <input type="text" id="editUsername" name="username" required>
+        </div>
+        <div class="form-group">
+          <label for="editBio">Bio:</label>
+          <textarea id="editBio" name="bio" rows="3" placeholder="Tell us about yourself..."></textarea>
+        </div>
+        <div class="form-actions" style="margin-top:1rem; display:flex; gap:1rem; justify-content:flex-end;">
+          <button type="button" id="cancelEditProfile" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="scripts/constants.js"></script>
   <script src="scripts/profile.js"></script>
 </body>
 </html>
