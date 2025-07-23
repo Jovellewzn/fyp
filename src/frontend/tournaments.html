@@ -270,6 +270,16 @@
       background: #6a82fb;
       color: #fff;
     }
+.form-control {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+}
     @media (max-width: 900px) {
       .tournaments-header, .filter-bar, .tournaments-grid {
         max-width: 98vw;
@@ -405,6 +415,14 @@
       <button class="pagination-btn">Next &raquo;</button>
     </nav>
   </main>
-  <script src="scripts/app.js"></script>
+  <div id="participantsModalRoot"></div>
+  <div id="discussionModalRoot"></div>
+  <div id="matchModalRoot"></div>
+
+
+  
+  <script src="scripts/tournaments_participant.js" defer></script>
+  <script src="scripts/discussions.js" defer></script>
+  <script src="scripts/matches.js" defer></script>
 </body>
 </html>

@@ -87,18 +87,17 @@ CREATE TABLE IF NOT EXISTS user_connections (
 CREATE TABLE IF NOT EXISTS match_results (
     id INTEGER PRIMARY KEY,
     tournament_id INTEGER NOT NULL,
-    player1_id INTEGER NOT NULL,
-    player2_id INTEGER NOT NULL,
-    winner_id INTEGER NOT NULL,
-    match_round INTEGER NOT NULL,
+    team1_name TEXT NOT NULL,
+    team2_name TEXT NOT NULL,
+    winner_name TEXT NOT NULL,
     match_date DATETIME,
-    score_player1 INTEGER,
-    score_player2 INTEGER,
+    score_team1 INTEGER,
+    score_team2 INTEGER,
     match_type TEXT DEFAULT 'standard' CHECK (match_type IN ('standard', 'semifinal', 'final')),
     FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE,
-    FOREIGN KEY (player1_id) REFERENCES users(id),
-    FOREIGN KEY (player2_id) REFERENCES users(id),
-    FOREIGN KEY (winner_id) REFERENCES users(id)
+    FOREIGN KEY (team1_name) REFERENCES tournament_participants(team_name),
+    FOREIGN KEY (team2_name) REFERENCES tournament_participants(team_name),
+    FOREIGN KEY (winner_name) REFERENCES tournament_participants(team_name)
 );
 
 CREATE TABLE IF NOT EXISTS post_likes (

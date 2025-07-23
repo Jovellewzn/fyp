@@ -180,7 +180,7 @@ function updatePendingTab(upcoming_pending, outgoing_pending) {
             <div class="connection-actions">
                 <button class="btn-small btn-success accept-request-btn" data-connection-id="${pending.id}">Accept</button>
                 <button class="btn-small btn-danger reject-request-btn" data-connection-id="${pending.id}">Reject</button>
-            </div>
+            </div>  
         </li>
         `;
 

@@ -1950,14 +1950,7 @@ class TournamentDiscussionsCRUD {
     }
 }
 
-// Test backend connection on page load
-async function testBackendConnection() {
-    try {
-        await apiCall('/health');
-    } catch (error) {
-        console.log('Backend disconnected - using local storage');
-    }
-}
+
 
 // Initialize all CRUD systems when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
