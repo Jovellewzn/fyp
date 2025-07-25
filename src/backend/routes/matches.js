@@ -99,7 +99,6 @@ router.patch('/:mid', (req, res) => {
   });
 });
 
-
 router.delete('/:mid', (req, res) => {
   const { mid } = req.params;
 

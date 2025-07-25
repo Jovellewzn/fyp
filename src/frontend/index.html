@@ -11,14 +11,14 @@
     <div class="nav-inner">
       <span class="nav-logo">GameVibe Arena</span>
       <div class="nav-links">
-        <a href="index.html" class="nav-link" tabindex="0">Home</a>
+        <a href="index.html" class="nav-link active" tabindex="0">Home</a>
         <a href="tournaments.html" class="nav-link" tabindex="0">Tournaments</a>
-        <a href="social.html" class="nav-link active" aria-current="page" tabindex="0">Social</a>
+        <a href="social.html" class="nav-link" aria-current="page" tabindex="0">Social</a>
         <a href="profile.html" class="nav-link" tabindex="0">Profile</a>
         <a href="notifications.html" class="nav-link" tabindex="0">Notifications</a>
       </div>
     </div>
-  </nav>
+
     </nav>
     <main class="dashboard-main">
           <section class="hero-section">
@@ -103,12 +103,27 @@
             </div>
           </div>
         </div>
+        <div id="chatbot-container">
+  <button id="chatbot-toggle" aria-label="Open Chatbot">💬</button>
+  <div id="chatbot-window" style="display:none;">
+    <div id="chatbot-header">
+      <span>GameVibe Chatbot</span>
+      <button id="chatbot-close" aria-label="Close Chatbot">&times;</button>
+    </div>
+    <div id="chatbot-messages"></div>
+    <form id="chatbot-form">
+      <input type="text" id="chatbot-input" placeholder="Type your message..." autocomplete="off" required />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+</div>
       </section>
     </main>
     <footer class="dashboard-footer">
       &copy; 2025 GameVibe Arena. All rights reserved.
     </footer>
-    <script src="scripts/app.js"></script>
+
+  <script src="../../chatbot.js" defer></script>
     <script>
       // --- Navbar Auth & Responsive Logic ---
       const navLinks = document.getElementById('navLinks');
@@ -128,33 +143,7 @@
         return path.substring(path.lastIndexOf('/') + 1);
       }
       
-      // Check server status
-      function checkServerStatus() {
-        const statusDiv = document.getElementById('serverStatus');
-        const notification = document.getElementById('serverNotification');
-        if (!statusDiv) return;
-        
-        fetch('http://localhost:5000/api/health')
-          .then(response => response.json())
-          .then(data => {
-            statusDiv.innerHTML = '✅ Server Online';
-            statusDiv.className = 'server-status online';
-            statusDiv.title = 'Backend server is running - all features available';
-            if (notification) notification.style.display = 'none';
-          })
-          .catch(error => {
-            statusDiv.innerHTML = '❌ Server Offline';
-            statusDiv.className = 'server-status offline';
-            statusDiv.title = 'Backend server is not running - see notification below for instructions';
-            
-            // Show notification for first time users
-            if (notification && notification.style.display === 'none') {
-              setTimeout(() => {
-                notification.style.display = 'block';
-              }, 2000);
-            }
-          });
-      }
+
       
       function renderNavbar() {
         const user = JSON.parse(localStorage.getItem('user'));
@@ -887,6 +876,109 @@
         from { opacity: 0; transform: translateY(30px); }
         to { opacity: 1; transform: translateY(0); }
       }
+
+      #chatbot-container {
+        position: fixed;
+        bottom: 32px;
+        right: 32px;
+        z-index: 9999;
+        font-family: inherit;
+      }
+      #chatbot-toggle {
+        background: linear-gradient(90deg, #6a82fb, #fc5c7d);
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        font-size: 2rem;
+        box-shadow: 0 4px 16px #6a82fb55;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.2s;
+      }
+      #chatbot-toggle:hover {
+        background: linear-gradient(90deg, #fc5c7d, #6a82fb);
+        transform: scale(1.08);
+      }
+      #chatbot-window {
+        position: absolute;
+        bottom: 70px;
+        right: 0;
+        width: 320px;
+        max-height: 420px;
+        background: #232526;
+        border-radius: 18px;
+        box-shadow: 0 8px 32px #0005;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: fadeIn 0.2s;
+      }
+      #chatbot-header {
+        background: linear-gradient(90deg, #6a82fb, #fc5c7d);
+        color: #fff;
+        padding: 0.8rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 700;
+      }
+      #chatbot-close {
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 1.3rem;
+        cursor: pointer;
+      }
+      #chatbot-messages {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+        background: #232526;
+        color: #fff;
+        font-size: 1rem;
+      }
+      #chatbot-form {
+        display: flex;
+        border-top: 1px solid #444;
+        background: #232526;
+      }
+      #chatbot-input {
+        flex: 1;
+        border: none;
+        padding: 0.7rem 1rem;
+        font-size: 1rem;
+        background: #232526;
+        color: #fff;
+        outline: none;
+      }
+      #chatbot-form button {
+        background: #6a82fb;
+        color: #fff;
+        border: none;
+        padding: 0 1.2rem;
+        font-size: 1rem;
+        cursor: pointer;
+        border-radius: 0 0 18px 0;
+        transition: background 0.2s;
+      }
+      #chatbot-form button:hover {
+        background: #fc5c7d;
+      }
+      .chatbot-message {
+        margin-bottom: 0.7rem;
+        line-height: 1.4;
+      }
+      .chatbot-message.user {
+        text-align: right;
+        color: #6a82fb;
+      }
+      .chatbot-message.bot {
+        text-align: left;
+        color: #fc5c7d;
+      }
     </style>
+
+    
 </body>
 </html>

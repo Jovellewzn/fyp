@@ -663,6 +663,58 @@ body {
     padding: 2rem;
 }
 
+.ai-prediction-box {
+  position: relative;
+  margin: 1.5em 0;
+  padding: 1.5em;
+  border-radius: 12px;
+  background: rgba(23, 28, 42, 0.6);                   /* dark semi‑opaque */
+  border: 2px solid transparent;
+  border-image: linear-gradient(135deg, #6a82fb, #fc5c7d) 1;  /* purple→pink */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  backdrop-filter: blur(10px);                         /* frosted glass */
+}
+.ai-prediction-box:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* Heading */
+.ai-prediction-box h3 {
+  margin: 0 0 0.5em;
+  font-size: 1.3rem;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+/* Content */
+.ai-prediction-content p {
+  margin: 0.5em 0;
+  font-size: 1rem;
+  color: #ddd;
+}
+.ai-prediction-content b {
+  color: #fff;
+}
+
+/* Team names */
+.team-alpha {
+  color: #6a82fb;
+  font-weight: 600;
+}
+.team-beta {
+  color: #f33259;
+  font-weight: 600;
+}
+
+/* Footnote */
+.ai-prediction-content small {
+  display: block;
+  margin-top: 0.75em;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+}
 /* Responsive Design */
 @media (max-width: 768px) {
     .modal-content {
@@ -707,3 +759,4 @@ body {
         gap: 0.5rem;
     }
 }
+

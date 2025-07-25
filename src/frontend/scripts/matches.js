@@ -101,6 +101,17 @@ function createMatchResultsModal(matches, tid) {
           <div class="modal-actions">
               <button class="btn-primary report-match-btn" data-tid="${tid}" >Report New Match</button>
           </div>
+          <div class="ai-prediction-box">
+            <h3>AI Match Prediction</h3>
+            <div class="ai-prediction-content">
+              <p>
+                <strong>Prediction:</strong>
+                <span class="team-alpha">Team Alpha</span>
+                has a <b>65%</b> chance to win against
+                <span class="team-beta">Team Beta</span>.
+              </p>
+            </div>
+          </div>
           <div class="matches-list">
               ${matches.length > 0 ? matchesList : '<p class="no-matches">No match results reported yet.</p>'}
           </div>
