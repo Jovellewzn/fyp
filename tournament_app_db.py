@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS comments (
     content TEXT NOT NULL,
     parent_comment_id INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    edited_at DATETIME,
     FOREIGN KEY (post_id) REFERENCES social_posts(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (parent_comment_id) REFERENCES comments(id) ON DELETE CASCADE

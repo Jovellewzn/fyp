@@ -8,20 +8,17 @@
 </head>
 <body>
     <nav class="navbar" aria-label="Main Navigation">
-    <div class="nav-inner">
-      <span class="nav-logo">GameVibe Arena</span>
-      <div class="nav-links">
-        <a href="index.html" class="nav-link active" tabindex="0">Home</a>
-        <a href="tournaments.html" class="nav-link" tabindex="0">Tournaments</a>
-        <a href="social.html" class="nav-link" aria-current="page" tabindex="0">Social</a>
-        <a href="profile.html" class="nav-link" tabindex="0">Profile</a>
-        <a href="notifications.html" class="nav-link" tabindex="0">Notifications</a>
+      <div class="nav-inner">
+        <span class="nav-logo">GameVibe Arena</span>
+        <button class="nav-hamburger" id="navHamburger" aria-label="Open menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="nav-links" id="navLinks"></div>
+        <div class="nav-auth" id="navAuth"></div>
       </div>
-    </div>
-
     </nav>
     <main class="dashboard-main">
-          <section class="hero-section">
+      <section class="hero-section">
         <h1>Welcome, <span class="username">GamerTag123</span>!</h1>
         <p class="tagline">Unleash your skills. Connect. Compete. Celebrate.</p>
       </section>
@@ -32,42 +29,29 @@
             <a href="#tournaments" class="action-btn">Join Tournament</a>
             <a href="#social" class="action-btn">Create Post</a>
             <a href="profile.html" class="action-btn">View Profile</a>
-            <a href="tournaments.html" class="action-btn">View Tournaments</a>
           </div>
         </div>
         <div class="dashboard-card tournaments-card" aria-label="Upcoming Tournaments">
           <h2>Upcoming Tournaments</h2>
           <div class="scroll-list">
             <!-- Placeholder: List tournaments from DB (CRUD: Read) -->
-            <div class="tournament-card" data-tournament-id="1">
+            <div class="tournament-card">
               <div class="tournament-title">Valorant Masters</div>
               <div class="tournament-meta">FPS | Starts: 2025-07-20</div>
               <div class="tournament-prize">Prize: $2,000</div>
               <span class="tournament-status ongoing">Ongoing</span>
-              <div class="tournament-actions">
-                <button class="tournament-btn join-btn">Join</button>
-                <button class="tournament-btn view-details-btn">View Details</button>
-              </div>
             </div>
-            <div class="tournament-card" data-tournament-id="2">
+            <div class="tournament-card">
               <div class="tournament-title">Rocket League Cup</div>
               <div class="tournament-meta">Sports | Starts: 2025-07-25</div>
               <div class="tournament-prize">Prize: $1,000</div>
               <span class="tournament-status upcoming">Upcoming</span>
-              <div class="tournament-actions">
-                <button class="tournament-btn join-btn">Join</button>
-                <button class="tournament-btn view-details-btn">View Details</button>
-              </div>
             </div>
-            <div class="tournament-card" data-tournament-id="3">
+            <div class="tournament-card">
               <div class="tournament-title">Apex Legends Showdown</div>
               <div class="tournament-meta">Battle Royale | Starts: 2025-08-01</div>
               <div class="tournament-prize">Prize: $1,500</div>
               <span class="tournament-status upcoming">Upcoming</span>
-              <div class="tournament-actions">
-                <button class="tournament-btn join-btn">Join</button>
-                <button class="tournament-btn view-details-btn">View Details</button>
-              </div>
             </div>
           </div>
         </div>
@@ -280,6 +264,8 @@
         userConnectionsCRUD = new UserConnectionsCRUD();
       });
     </script>
+    <script src="scripts/constants.js"></script>
+    <script src="scripts/index.js"></script>
     <style>
       .nav-hamburger {
         display: none;
@@ -335,178 +321,6 @@
         margin-right: 0.2rem;
         letter-spacing: 0.2px;
       }
-      .server-status {
-        font-size: 0.9rem;
-        font-weight: 600;
-        padding: 0.3rem 0.8rem;
-        border-radius: 12px;
-        border: 2px solid;
-        margin-right: 0.5rem;
-        transition: all 0.3s;
-      }
-      .server-status.online {
-        color: #28a745;
-        border-color: #28a745;
-        background: rgba(40, 167, 69, 0.1);
-      }
-      .server-status.offline {
-        color: #dc3545;
-        border-color: #dc3545;
-        background: rgba(220, 53, 69, 0.1);
-        animation: pulse 2s infinite;
-      }
-      .server-status.offline:hover {
-        background: rgba(220, 53, 69, 0.2);
-        transform: scale(1.05);
-      }
-      @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.6; }
-        100% { opacity: 1; }
-      }
-      .server-notification {
-        position: fixed;
-        top: calc(var(--nav-height) + 1rem);
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(220, 53, 69, 0.95);
-        color: white;
-        padding: 1rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(220, 53, 69, 0.4);
-        z-index: 1000;
-        max-width: 500px;
-        width: 90%;
-        animation: slideDown 0.3s ease-out;
-      }
-      .notification-content {
-        position: relative;
-      }
-      .notification-content h3 {
-        margin: 0 0 0.5rem 0;
-        font-size: 1.2rem;
-      }
-      .notification-content p {
-        margin: 0.3rem 0;
-        font-size: 0.95rem;
-      }
-      .server-instructions {
-        background: rgba(255, 255, 255, 0.1);
-        padding: 0.8rem;
-        border-radius: 8px;
-        margin: 0.8rem 0;
-      }
-      .server-instructions code {
-        background: rgba(0, 0, 0, 0.3);
-        padding: 0.2rem 0.4rem;
-        border-radius: 4px;
-        font-family: 'Courier New', monospace;
-      }
-      .close-notification {
-        position: absolute;
-        top: -0.5rem;
-        right: -0.5rem;
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        color: white;
-        width: 2rem;
-        height: 2rem;
-        border-radius: 50%;
-        cursor: pointer;
-        font-size: 1rem;
-        font-weight: bold;
-      }
-      .close-notification:hover {
-        background: rgba(255, 255, 255, 0.3);
-      }
-      @keyframes slideDown {
-        from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
-        to { transform: translateX(-50%) translateY(0); opacity: 1; }
-      }
-      
-      /* Friend Request Cards Styles */
-      .request-card {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        background: rgba(40, 44, 60, 0.8);
-        border-radius: 12px;
-        transition: all 0.2s;
-        border: 1px solid rgba(106, 130, 251, 0.2);
-      }
-      .request-card:hover {
-        background: rgba(40, 44, 60, 0.9);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(106, 130, 251, 0.3);
-      }
-      .request-avatar {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid #6a82fb;
-      }
-      .request-content {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 0.3rem;
-      }
-      .request-name {
-        font-weight: 600;
-        color: #fff;
-        font-size: 1rem;
-      }
-      .request-email {
-        font-size: 0.85rem;
-        color: #b3b3b3;
-        margin: 0;
-      }
-      .request-date {
-        font-size: 0.8rem;
-        color: #888;
-      }
-      .request-actions {
-        display: flex;
-        gap: 0.5rem;
-        flex-direction: column;
-      }
-      .accept-btn, .reject-btn {
-        padding: 0.4rem 0.8rem;
-        border: none;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        min-width: 70px;
-      }
-      .accept-btn {
-        background: linear-gradient(90deg, #28a745, #20c997);
-        color: #fff;
-      }
-      .accept-btn:hover {
-        background: linear-gradient(90deg, #218838, #1ea76f);
-        transform: scale(1.05);
-      }
-      .reject-btn {
-        background: linear-gradient(90deg, #dc3545, #e74c3c);
-        color: #fff;
-      }
-      .reject-btn:hover {
-        background: linear-gradient(90deg, #c82333, #c0392b);
-        transform: scale(1.05);
-      }
-      .loading-message {
-        text-align: center;
-        padding: 1.5rem;
-        color: #b3b3b3;
-      }
-      .loading-message p {
-        margin: 0.3rem 0;
-      }
-      
       :root {
         --glass-bg: rgba(30, 34, 45, 0.75);
         --glass-blur: 18px;
@@ -717,39 +531,6 @@
       }
       .tournament-status.upcoming {
         background: linear-gradient(90deg, #232526, #6a82fb);
-      }
-      .tournament-actions {
-        display: flex;
-        gap: 0.5rem;
-        margin-top: 0.5rem;
-        flex-wrap: wrap;
-      }
-      .tournament-btn {
-        background: var(--gradient-main);
-        color: #fff;
-        font-weight: 600;
-        border: none;
-        border-radius: 12px;
-        padding: 0.4rem 0.8rem;
-        font-size: 0.9rem;
-        cursor: pointer;
-        box-shadow: 0 2px 6px #6a82fb33;
-        transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
-        text-decoration: none;
-        outline: none;
-        flex: 1;
-        min-width: 80px;
-      }
-      .tournament-btn:hover, .tournament-btn:focus {
-        background: var(--gradient-accent);
-        transform: scale(1.05);
-        box-shadow: 0 4px 12px #fc5c7d44;
-      }
-      .tournament-btn.view-details-btn {
-        background: linear-gradient(90deg, #232526, #414345);
-      }
-      .tournament-btn.view-details-btn:hover {
-        background: linear-gradient(90deg, #414345, #6a82fb);
       }
       /* Social Post Card */
       .post-card {

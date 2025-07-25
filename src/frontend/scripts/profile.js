@@ -1,10 +1,9 @@
-const API_BASE = 'http://localhost:5000/api';
 const currentUser = 1;
 
 // Fetch user connections from the API
 async function fetchUserConnections() {
     try {
-        const response = await fetch(`${API_BASE}/connections/users/${currentUser}`);
+        const response = await fetch(`${API_BASE}/connections/users/${currentUser}`, { credentials: 'include' });
         const data = await response.json();
 
         updateFollowersTab(data.followers);
@@ -17,18 +16,6 @@ async function fetchUserConnections() {
 
     } catch (error) {
         console.error('Error fetching user connections:', error);
-    }
-}
-
-//fetch tournament data
-async function fetchTournaments() {
-    try {
-        const response = await fetch(`${API_BASE}/users/${currentUser}/tournaments`);
-        const data = await response.json();
-        console.log("Tournaments:", data);
-        updateTournamentsTab(data);
-    } catch (error) {
-        console.error('Error fetching tournaments:', error);
     }
 }
 
@@ -217,7 +204,7 @@ function updateDiscoverUsersTab(followingList, upcoming_pending, outgoing_pendin
     console.log("followingList:", followingList);
     discoveruserList.forEach((user) => {
         const user_id = user.id;
-        if (user_id == currentUser) return; 
+        if (user_id == currentUser) return;
         if (followingList.some((following) => following.following_id === user_id)) return;
         if (upcoming_pending.some((pending) => pending.follower_id === user_id)) return;
         if (outgoing_pending.some((pending) => pending.following_id === user_id)) return;
@@ -243,25 +230,10 @@ function updateProfileDisplay(user) {
     profileusername.innerHTML = user.username; // Clear existing content
 
     const profileBio = document.getElementById('profile-bio');
-    profileBio.innerHTML = user.bio ; // Clear existing content
+    profileBio.innerHTML = user.bio; // Clear existing content
 
     const lastLogin = document.getElementById('profile-lastlogin');
     lastLogin.innerHTML = `Last Login: ${!user.last_login ? 'Never' : user.last_login}`; // Clear existing content
-}
-
-function updateTournamentsTab(tournaments) {
-    const tournamentsList = document.getElementById('tournamentsList');
-    tournamentsList.innerHTML = ''; // Clear existing content
-    tournaments.forEach(tournament => {
-        const item = `
-        <div class="tournament-card">
-            <h3>${tournament.name}</h3>
-            <p>${tournament.description}</p>
-            <p>Date: ${new Date(tournament.date).toLocaleDateString()}</p>
-        </div>
-        `;
-        tournamentsList.insertAdjacentHTML('beforeend', item);
-    });
 }
 
 function updatePostsTab(posts) {
@@ -372,6 +344,373 @@ function setupEventListeners() {
     });
 }
 
-setupEventListeners();
-fetchUserConnections();
-fetchUserProfile(currentUser);
+// Load profile data from backend
+async function loadProfile() {
+    try {
+        // 1. Fetch user info
+        const res = await fetch(`${API_BASE}/users/profile`, { credentials: 'include' });
+        if (!res.ok) return;
+        const user = await res.json();
+
+        // Fill in user info
+        document.querySelector('.profile-username').textContent = user.username || 'GamerTag123';
+        document.querySelector('.profile-bio').textContent = user.bio || 'Competitive gamer. FPS enthusiast. Always up for a challenge!';
+        document.querySelector('.profile-lastlogin').textContent = user.last_login ? 'Last login: ' + user.last_login : 'Last login: 2025-07-12 14:30';
+
+        // Set profile picture - use anonymous placeholder if no picture exists
+        const profileAvatar = document.querySelector('.profile-avatar');
+        if (user.profile_picture && user.profile_picture.trim() !== '') {
+            profileAvatar.src = user.profile_picture;
+        } else {
+            profileAvatar.src = 'https://via.placeholder.com/100x100/6a82fb/ffffff?text=👤';
+        }
+
+        // Stats
+        const statValue = document.querySelector('.stat-value');
+        if (statValue) {
+            statValue.textContent = user.total_hours || '1,250';
+        }
+
+        // Achievements/badges
+        if (user.badges && Array.isArray(user.badges)) {
+            document.querySelector('.profile-badges').innerHTML = user.badges.map(b =>
+                `<span class="badge"><span class="badge-icon" aria-hidden="true">${b.icon || '🏆'}</span> ${b.title} <span class="badge-desc">${b.desc || ''}</span></span>`
+            ).join('');
+        }
+
+        // Tournaments
+        const tRes = await fetch(`${API_BASE}/tournaments`, { credentials: 'include' });
+        if (tRes.ok) {
+            const tournaments = await tRes.json();
+            const tournamentsList = tournaments.tournaments || [];
+            document.querySelector('#tab-tournaments .insta-list').innerHTML = tournaments.count
+                ? tournamentsList.map(t => (`
+                <li class="insta-card">
+                <img src="${t.logo || 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=facearea&w=256&h=256'}" alt="Tournament Logo" class="insta-thumb">
+                <div class="insta-content">
+                    <span class="insta-title">${t.title}</span>
+                    <span class="insta-meta">Joined: ${t.joined_at || '-'} · Status: ${t.status || '-'}</span>
+                </div>
+                <span class="insta-action">View</span>
+                </li>
+            `)).join('') : '<li class="no-users">No tournaments joined yet.</li>';
+        }
+
+        // Posts
+        const pRes = await fetch(`${API_BASE}/posts`, { credentials: 'include' });
+        if (pRes.ok) {
+            const posts = await pRes.json();
+            document.querySelector('#tab-posts .insta-list').innerHTML = posts.length
+                ? posts.map(post => `
+                <li class="insta-card">
+                <img src="${post.image_url || 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=facearea&w=256&h=256'}" alt="Post Image" class="insta-thumb">
+                <div class="insta-content">
+                    <span class="insta-title">${post.content}</span>
+                    <span class="insta-meta">${post.created_at} · ${post.likes_count || 0} Likes · ${post.comments_count || 0} Comments</span>
+                </div>
+                <span class="insta-action">Like</span>
+                </li>
+            `).join('') : '<li class="no-users">No posts yet.</li>';
+        }
+    } catch (e) {
+        console.error('Error loading profile:', e);
+        // Keep default static content if API fails
+    }
+}
+
+// Tab switching logic, keyboard accessible
+document.addEventListener('DOMContentLoaded', function () {
+
+    // Setup event listeners for tab buttons
+    setupEventListeners();
+
+    // Fetch user connections
+    fetchUserConnections();
+
+    // Load profile data first
+    loadProfile();
+
+    // Edit Profile Modal Logic - More robust approach
+    setupEditProfileModal();
+});
+
+function setupEditProfileModal() {
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const editProfileModal = document.getElementById('editProfileModal');
+    const closeEditProfile = document.getElementById('closeEditProfile');
+    const cancelEditProfile = document.getElementById('cancelEditProfile');
+    const editProfileForm = document.getElementById('editProfileForm');
+    const uploadBtn = document.getElementById('uploadProfilePictureBtn');
+    const fileInput = document.getElementById('editProfilePicture');
+    const preview = document.getElementById('profilePicturePreview');
+
+    if (!editProfileBtn) {
+        console.error('Edit Profile button not found!');
+        return;
+    }
+
+    if (!editProfileModal) {
+        console.error('Edit Profile modal not found!');
+        return;
+    }
+
+    // File upload handlers
+    if (uploadBtn && fileInput && preview) {
+        // Click upload button to trigger file input
+        uploadBtn.onclick = function () {
+            fileInput.click();
+        };
+
+        // Click preview image to trigger file input
+        preview.onclick = function () {
+            fileInput.click();
+        };
+
+        // Handle file selection
+        fileInput.onchange = function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select an image file.');
+                    return;
+                }
+
+                // Validate file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Image file size must be less than 5MB.');
+                    return;
+                }
+
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+    }
+
+    // Remove profile picture button
+    const removeBtn = document.getElementById('removeProfilePictureBtn');
+    if (removeBtn) {
+        removeBtn.onclick = function () {
+            preview.src = 'https://via.placeholder.com/80x80/6a82fb/ffffff?text=👤';
+            fileInput.value = '';
+            preview.setAttribute('data-removed', 'true');
+        };
+    }
+
+    // Reset data-removed when opening modal or selecting a new file
+    if (fileInput) {
+        fileInput.onchange = function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select an image file.');
+                    return;
+                }
+                // Validate file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Image file size must be less than 5MB.');
+                    return;
+                }
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                    preview.removeAttribute('data-removed');
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+    }
+
+    // Also clear data-removed when opening modal
+    if (preview) {
+        preview.removeAttribute('data-removed');
+    }
+
+    // Add click event to button
+    editProfileBtn.onclick = function (e) {
+        e.preventDefault();
+        console.log('Edit Profile button clicked (onclick)');
+        openEditModal();
+    };
+
+    // Also add event listener as backup
+    editProfileBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        console.log('Edit Profile button clicked (event listener)');
+        openEditModal();
+    });
+
+    // Close modal events
+    if (closeEditProfile) {
+        closeEditProfile.onclick = function () {
+            editProfileModal.style.display = 'none';
+            console.log('Modal closed (X)');
+        };
+    }
+
+    if (cancelEditProfile) {
+        cancelEditProfile.onclick = function () {
+            editProfileModal.style.display = 'none';
+            console.log('Modal closed (Cancel)');
+        };
+    }
+
+    // Form submission
+    if (editProfileForm) {
+        editProfileForm.onsubmit = async function (e) {
+            e.preventDefault();
+            console.log('Form submitted');
+            await saveProfile();
+        };
+    }
+
+    // Click outside to close
+    editProfileModal.onclick = function (e) {
+        if (e.target === editProfileModal) {
+            editProfileModal.style.display = 'none';
+            console.log('Modal closed (outside click)');
+        }
+    };
+}
+
+async function openEditModal() {
+    const editProfileModal = document.getElementById('editProfileModal');
+    const profilePicturePreview = document.getElementById('profilePicturePreview');
+    console.log('Opening modal...');
+
+    // Show modal immediately
+    editProfileModal.style.display = 'flex';
+    console.log('Modal display set to flex');
+
+    // Try to fetch profile data
+    try {
+        const response = await fetch(`${API_BASE}/users/profile`, { credentials: 'include' });
+        if (response.ok) {
+            const user = await response.json();
+            console.log('User data loaded:', user);
+            document.getElementById('editUsername').value = user.username || '';
+            document.getElementById('editBio').value = user.bio || '';
+
+            // Set profile picture preview - use anonymous placeholder if no picture exists
+            if (user.profile_picture && user.profile_picture.trim() !== '') {
+                profilePicturePreview.src = user.profile_picture;
+            } else {
+                profilePicturePreview.src = 'https://via.placeholder.com/80x80/6a82fb/ffffff?text=👤';
+            }
+        } else {
+            console.log('Not logged in, using default values');
+            // Use default values from current page
+            document.getElementById('editUsername').value = 'GamerTag123';
+            document.getElementById('editBio').value = 'Competitive gamer. FPS enthusiast. Always up for a challenge!';
+            profilePicturePreview.src = 'https://via.placeholder.com/80x80/6a82fb/ffffff?text=👤';
+        }
+    } catch (error) {
+        console.error('Error fetching profile:', error);
+        // Use default values
+        document.getElementById('editUsername').value = 'GamerTag123';
+        document.getElementById('editBio').value = 'Competitive gamer. FPS enthusiast. Always up for a challenge!';
+        profilePicturePreview.src = 'https://via.placeholder.com/80x80/6a82fb/ffffff?text=👤';
+    }
+}
+
+async function saveProfile() {
+    const username = document.getElementById('editUsername').value;
+    const bio = document.getElementById('editBio').value;
+    const fileInput = document.getElementById('editProfilePicture');
+    const preview = document.getElementById('profilePicturePreview');
+    try {
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('bio', bio);
+        if (fileInput.files[0]) {
+            formData.append('profilePicture', fileInput.files[0]);
+        }
+        if (preview.getAttribute('data-removed') === 'true') {
+            formData.append('removeProfilePicture', 'true');
+        }
+        const response = await fetch(`${API_BASE}/users/profile`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+        });
+        if (response.ok) {
+            const result = await response.json();
+            document.getElementById('editProfileModal').style.display = 'none';
+            document.querySelector('.profile-username').textContent = username;
+            document.querySelector('.profile-bio').textContent = bio;
+            // Always update profile picture immediately
+            if (preview.getAttribute('data-removed') === 'true' || !result.profile_picture || result.profile_picture.trim() === '') {
+                document.getElementById('profileAvatar').src = 'https://via.placeholder.com/100x100/6a82fb/ffffff?text=👤';
+            } else {
+                document.getElementById('profileAvatar').src = result.profile_picture;
+            }
+            alert('Profile updated successfully!');
+            await loadProfile();
+        } else {
+            const errorData = await response.json();
+            alert('Error saving profile: ' + (errorData.message || 'Please try again.'));
+        }
+    } catch (error) {
+        alert('Error saving profile. Please try again.');
+    }
+}
+
+// Delete Account logic
+document.addEventListener('DOMContentLoaded', function () {
+    const deleteBtn = document.getElementById('deleteAccountBtn');
+    if (deleteBtn) {
+        deleteBtn.onclick = async function () {
+            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                try {
+                    const res = await fetch(`${API_BASE}/users`, {
+                        method: 'DELETE',
+                        credentials: 'include'
+                    });
+                    if (res.ok) {
+                        alert('Your account has been deleted.');
+                        window.location.href = 'login.html';
+                    } else {
+                        const err = await res.json();
+                        alert('Error deleting account: ' + (err.message || 'Please try again.'));
+                    }
+                } catch (e) {
+                    alert('Error deleting account. Please try again.');
+                }
+            }
+        };
+    }
+});
+
+// Delete Account logic for modal and top button
+document.addEventListener('DOMContentLoaded', function () {
+    // Top right delete button only
+    const deleteAccountTopBtn = document.getElementById('deleteAccountTopBtn');
+    if (deleteAccountTopBtn) {
+        deleteAccountTopBtn.onclick = async function () {
+            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                try {
+                    const response = await fetch('/api/delete-account', {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                    if (response.ok) {
+                        alert('Your account has been deleted.');
+                        window.location.href = 'login.html';
+                    } else {
+                        const errorData = await response.json();
+                        alert('Error deleting account: ' + (errorData.message || 'Please try again.'));
+                    }
+                } catch (error) {
+                    alert('Error deleting account. Please try again.');
+                }
+            }
+        };
+    }
+});
