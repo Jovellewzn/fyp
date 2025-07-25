@@ -77,11 +77,193 @@
             </div>
           </div>
         </div>
+        <div class="dashboard-card pending-requests-card" aria-label="Pending Friend Requests">
+          <h2>📬 Friend Requests</h2>
+          <div class="scroll-list" id="pendingRequestsList">
+            <!-- Pending friend requests will be loaded here -->
+            <div class="loading-message">
+              <p>🔍 No pending friend requests</p>
+              <p style="font-size: 0.8rem; color: #888;">Friend requests will appear here when received</p>
+            </div>
+          </div>
+        </div>
+        <div id="chatbot-container">
+  <button id="chatbot-toggle" aria-label="Open Chatbot">💬</button>
+  <div id="chatbot-window" style="display:none;">
+    <div id="chatbot-header">
+      <span>GameVibe Chatbot</span>
+      <button id="chatbot-close" aria-label="Close Chatbot">&times;</button>
+    </div>
+    <div id="chatbot-messages"></div>
+    <form id="chatbot-form">
+      <input type="text" id="chatbot-input" placeholder="Type your message..." autocomplete="off" required />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+</div>
       </section>
     </main>
     <footer class="dashboard-footer">
       &copy; 2025 GameVibe Arena. All rights reserved.
     </footer>
+
+  <script src="scripts/chatbot.js" defer></script>
+    <script>
+      // --- Navbar Auth & Responsive Logic ---
+      const navLinks = document.getElementById('navLinks');
+      const navAuth = document.getElementById('navAuth');
+      const navHamburger = document.getElementById('navHamburger');
+      // Set your nav links here for logged-in state
+      const NAV_LINKS = [
+        { href: 'index.html', label: 'Home' },
+        { href: 'tournaments.html', label: 'Tournaments' },
+        { href: 'social.html', label: 'Social' },
+        { href: 'profile.html', label: 'Profile' },
+        { href: 'notifications.html', label: 'Notifications' }
+      ];
+      // Utility: get current page filename
+      function getCurrentPage() {
+        const path = window.location.pathname;
+        return path.substring(path.lastIndexOf('/') + 1);
+      }
+      
+
+      
+      function renderNavbar() {
+        const user = JSON.parse(localStorage.getItem('user'));
+        navLinks.innerHTML = '';
+        navAuth.innerHTML = '';
+        if (user && user.username) {
+          // Logged in: show all links
+          const current = getCurrentPage();
+          NAV_LINKS.forEach(link => {
+            const a = document.createElement('a');
+            a.href = link.href;
+            a.className = 'nav-link' + (current === link.href ? ' active' : '');
+            a.setAttribute('tabindex', '0');
+            if (current === link.href) {
+              a.setAttribute('aria-current', 'page');
+            }
+            a.textContent = link.label;
+            navLinks.appendChild(a);
+          });
+          navAuth.innerHTML = `
+            <span class="nav-username">Hi, ${user.username}</span>
+            <button class="nav-btn logout-btn" id="logoutBtn">Logout</button>
+          `;
+          document.getElementById('logoutBtn').onclick = () => {
+            localStorage.removeItem('user');
+            location.reload();
+          };
+        } else {
+          // Not logged in: show only Login and Sign Up
+          navLinks.innerHTML = '';
+          navAuth.innerHTML = `
+            <div id="serverStatus" class="server-status">🔍 Checking...</div>
+            <button class="nav-btn login-btn" id="loginBtn">Login</button>
+            <button class="nav-btn signup-btn" id="signupBtn">Sign Up</button>
+          `;
+          document.getElementById('loginBtn').onclick = () => {
+            window.location.href = 'login.html';
+          };
+          document.getElementById('signupBtn').onclick = () => {
+            window.location.href = 'signup.html';
+          };
+          
+          // Check server status
+          checkServerStatus();
+        }
+      }
+      renderNavbar();
+      
+      // Auto-check server status every 10 seconds
+      setInterval(() => {
+        if (document.getElementById('serverStatus')) {
+          checkServerStatus();
+        }
+      }, 10000);
+      
+      // Load pending friend requests when page loads
+      loadPendingRequests();
+      
+      async function loadPendingRequests() {
+        const pendingDiv = document.getElementById('pendingRequestsList');
+        if (!pendingDiv) return;
+        
+        console.log('🔍 Loading pending requests...');
+        
+        try {
+          // Assuming current user ID is 1 (you can modify this)
+          const currentUserId = 1;
+          console.log(`📡 Fetching: http://localhost:5000/api/users/${currentUserId}/connections`);
+          
+          const response = await fetch(`http://localhost:5000/api/users/${currentUserId}/connections`);
+          console.log('📡 Response status:', response.status);
+          
+          const data = await response.json();
+          console.log('📡 Response data:', data);
+          
+          if (data && data.incoming_pending && data.incoming_pending.length > 0) {
+            pendingDiv.innerHTML = data.incoming_pending.map(request => `
+              <div class="request-card">
+                <img src="https://randomuser.me/api/portraits/${request.follower_id % 2 === 0 ? 'men' : 'women'}/${(request.follower_id % 50) + 1}.jpg" 
+                     alt="${request.follower_username}" class="request-avatar">
+                <div class="request-content">
+                  <span class="request-name">${request.follower_username}</span>
+                  <p class="request-email">${request.follower_email}</p>
+                  <span class="request-date">Sent ${new Date(request.created_at).toLocaleDateString()}</span>
+                </div>
+                <div class="request-actions">
+                  <button class="accept-btn accept-request-btn" data-connection-id="${request.id}">Accept</button>
+                  <button class="reject-btn reject-request-btn" data-connection-id="${request.id}">Reject</button>
+                </div>
+              </div>
+            `).join('');
+          } else {
+            pendingDiv.innerHTML = `
+              <div class="loading-message">
+                <p>🔍 No pending friend requests</p>
+                <p style="font-size: 0.8rem; color: #888;">Friend requests will appear here when received</p>
+              </div>
+            `;
+          }
+        } catch (error) {
+          console.log('Could not load pending requests - server may be offline');
+          pendingDiv.innerHTML = `
+            <div class="loading-message">
+              <p>� Friend requests will appear here</p>
+              <p style="font-size: 0.8rem; color: #888;">Start the backend server to see incoming requests</p>
+            </div>
+          `;
+        }
+      }
+      
+      // Hamburger menu toggle
+      navHamburger.addEventListener('click', function() {
+        navLinks.classList.toggle('show');
+        navHamburger.setAttribute('aria-expanded', navLinks.classList.contains('show'));
+      });
+      // Close nav on link click (mobile)
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('nav-link')) {
+          navLinks.classList.remove('show');
+          navHamburger.setAttribute('aria-expanded', 'false');
+        }
+      });
+      // Keyboard accessibility for hamburger
+      navHamburger.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          navHamburger.click();
+        }
+      });
+      
+      // Initialize UserConnectionsCRUD for friend requests
+      let userConnectionsCRUD;
+      document.addEventListener('DOMContentLoaded', () => {
+        userConnectionsCRUD = new UserConnectionsCRUD();
+      });
+    </script>
     <script src="scripts/constants.js"></script>
     <script src="scripts/index.js"></script>
     <style>
@@ -475,6 +657,109 @@
         from { opacity: 0; transform: translateY(30px); }
         to { opacity: 1; transform: translateY(0); }
       }
+
+      #chatbot-container {
+        position: fixed;
+        bottom: 32px;
+        right: 32px;
+        z-index: 9999;
+        font-family: inherit;
+      }
+      #chatbot-toggle {
+        background: linear-gradient(90deg, #6a82fb, #fc5c7d);
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        font-size: 2rem;
+        box-shadow: 0 4px 16px #6a82fb55;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.2s;
+      }
+      #chatbot-toggle:hover {
+        background: linear-gradient(90deg, #fc5c7d, #6a82fb);
+        transform: scale(1.08);
+      }
+      #chatbot-window {
+        position: absolute;
+        bottom: 70px;
+        right: 0;
+        width: 320px;
+        max-height: 420px;
+        background: #232526;
+        border-radius: 18px;
+        box-shadow: 0 8px 32px #0005;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: fadeIn 0.2s;
+      }
+      #chatbot-header {
+        background: linear-gradient(90deg, #6a82fb, #fc5c7d);
+        color: #fff;
+        padding: 0.8rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 700;
+      }
+      #chatbot-close {
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 1.3rem;
+        cursor: pointer;
+      }
+      #chatbot-messages {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+        background: #232526;
+        color: #fff;
+        font-size: 1rem;
+      }
+      #chatbot-form {
+        display: flex;
+        border-top: 1px solid #444;
+        background: #232526;
+      }
+      #chatbot-input {
+        flex: 1;
+        border: none;
+        padding: 0.7rem 1rem;
+        font-size: 1rem;
+        background: #232526;
+        color: #fff;
+        outline: none;
+      }
+      #chatbot-form button {
+        background: #6a82fb;
+        color: #fff;
+        border: none;
+        padding: 0 1.2rem;
+        font-size: 1rem;
+        cursor: pointer;
+        border-radius: 0 0 18px 0;
+        transition: background 0.2s;
+      }
+      #chatbot-form button:hover {
+        background: #fc5c7d;
+      }
+      .chatbot-message {
+        margin-bottom: 0.7rem;
+        line-height: 1.4;
+      }
+      .chatbot-message.user {
+        text-align: right;
+        color: #6a82fb;
+      }
+      .chatbot-message.bot {
+        text-align: left;
+        color: #fc5c7d;
+      }
     </style>
+
+    
 </body>
 </html>

@@ -163,7 +163,7 @@
     }
 
     /* Tournament Creation Modal */
-    .modal-overlay {
+    .modal-overlay-tournament {
       position: fixed;
       top: 0;
       left: 0;
@@ -179,7 +179,7 @@
       padding: 1rem;
     }
 
-    .modal-overlay.show {
+    .modal-overlay-tournament.show {
       display: flex;
     }
 
@@ -623,6 +623,16 @@
       background: #6a82fb;
       color: #fff;
     }
+.form-control {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+}
     @media (max-width: 900px) {
       .tournaments-header, .filter-bar, .tournaments-grid {
         max-width: 98vw;
@@ -667,7 +677,7 @@
     </div>
 
     <!-- Tournament Creation Modal -->
-    <div class="modal-overlay" id="tournamentModal">
+    <div class="modal-overlay-tournament" id="tournamentModal">
       <div class="tournament-modal">
         <div class="modal-header">
           <h2 class="modal-title">Create New Tournament</h2>
@@ -799,9 +809,14 @@
       <button class="pagination-btn">Next &raquo;</button>
     </nav>
   </main>
-
+  <div id="participantsModalRoot"></div>
+  <div id="discussionModalRoot"></div>
+  <div id="matchModalRoot"></div>  
+  
   <script src="scripts/constants.js"></script>
   <script src="scripts/tournament.js"></script>
+  <script src="scripts/discussions.js" defer></script>
+  <script src="scripts/matches.js" defer></script>
 
 </body>
 </html>
