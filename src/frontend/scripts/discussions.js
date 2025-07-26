@@ -32,7 +32,8 @@ async function createDiscussion(tid, title, content) {
     const response = await fetch(`${API_BASE}/discussions/${tid}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },  
-      body: JSON.stringify({ title, description: content, userid : currentUserId })
+      body: JSON.stringify({ title, description: content }),
+      credentials: 'include'
     });
   
     if (!response.ok) {
@@ -135,8 +136,10 @@ async function createReply(did, content, tid) {
     await fetch(`${API_BASE}/discussions/${did}/replies`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content, userId: currentUserId })
+      body: JSON.stringify({ content }),
+      credentials: 'include'
     });
+    
     discussionModalRoot.innerHTML = '';
     viewDiscussionDetails(did, tid);
 
@@ -163,21 +166,19 @@ function updateReplies(replies) {
 
   replies.forEach(reply => {
     const item = `
-      <div class="reply-item" style="border-bottom:1px solid #eee;padding:0.5rem 0;">
-        <div class="reply-content" style="margin-bottom:0.25rem;">
-          ${reply.content}
+      <div class="reply-item">
+        <div class="reply-content">${reply.content}</div>
+        <div class="reply-meta">
+          <span class="author">By: ${reply.author_name || 'Anonymous'}</span>
+          <span class="date">On: ${new Date(reply.created_at).toLocaleDateString()}</span>
         </div>
-        <div class="reply-meta" style="font-size:0.85rem;color:#666;">
-          <span>By: ${reply.author_name || 'Anonymous'}</span>
-          <span style="margin-left:1rem;">On: ${new Date(reply.created_at).toLocaleDateString()}</span>
-        </div>
-        <div class="discussion-actions" style="margin-top:.5rem; display:flex; gap:.5rem;">
+        <div class="reply-actions">
           <button class="btn-edit edit-reply-btn" data-rid="${reply.id}">Edit</button>
           <button class="btn-delete delete-reply-btn" data-rid="${reply.id}">Remove</button>
         </div>
-
       </div>
     `;
+
     repliesList.insertAdjacentHTML('beforeend', item);
   });
 }
@@ -358,7 +359,7 @@ function createDiscussionDetailsModal(discussion, tid) {
         <div class="discussion-content-full">${discussion.description}</div>
         <div class="discussion-meta-full">
           <span class="author">Started by: ${discussion.creator_username}</span>
-          <span class="created-date">Created: ${new Date(discussion.created_at).toLocaleString()}</span>
+          <span class="created-date">Created: ${new Date(discussion.created_at).toLocaleDateString()}</span>
         </div>
         <div class="replies-section">
           <h3>Replies (<span id="replies-count">${discussion.replies.length}</span>)</h3>

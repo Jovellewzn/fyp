@@ -184,6 +184,24 @@ router.post('/', (req, res) => {
     });
 });
 
+router.get('/upcoming', (req, res) => {
+  const sql = `
+    SELECT id, title AS name, game_type AS category, start_date, prize_pool AS prize, status
+    FROM tournaments
+    WHERE status = 'upcoming'
+    ORDER BY start_date ASC
+  `;
+  
+  db.all(sql, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({
+      success: true,
+      tournaments: rows,
+      count: rows.length
+    });
+  });
+});
+
 // Get a specific tournament by ID
 router.get('/:id', (req, res) => {
     const tournamentId = req.params.id;
@@ -326,14 +344,17 @@ router.get('/:tid/participants', (req, res) => {
 // POST /api/tournaments/:tid/participants
 router.post('/:tid/participants', (req, res) => {
   const { tid } = req.params;
-  const { userId, teamName } = req.body;
-  if (!userId) return res.status(400).json({ error: 'userId is required' });
+  const {teamName } = req.body;
+  
+  const cookie = req.cookies.user_id;
+  if (!cookie) return res.status(400).json({ error: 'userId is required' });
+
 
   // block duplicates
   const duplicates = `
     SELECT 1 FROM tournament_participants 
     WHERE tournament_id=? AND user_id=?`;
-  db.get(duplicates, [tid, userId], (e,row) => {
+  db.get(duplicates, [tid, cookie], (e,row) => {
     if (e) return res.status(500).json({ error: e.message });
     if (row) return res.status(400).json({ error: 'Already joined' });
 
@@ -342,7 +363,7 @@ router.post('/:tid/participants', (req, res) => {
         (tournament_id, user_id, team_name, registration_date)
       VALUES (?, ?, ?, datetime('now'))
     `;
-    db.run(insert, [tid, userId, teamName], function(err2) {
+    db.run(insert, [tid, cookie, teamName], function(err2) {
       if (err2) return res.status(500).json({ error: err2.message });
       res.status(201).json({ id: this.lastID });
     });
@@ -378,6 +399,8 @@ router.delete('/participants/:pid', (req, res) => {
   });
 });
 
+
+
 router.get('/:tid/teams', (req, res) => {
   const { tid } = req.params;
   const sql = `
@@ -391,6 +414,7 @@ router.get('/:tid/teams', (req, res) => {
     res.json(rows);
   });
 });
+
 
 
 

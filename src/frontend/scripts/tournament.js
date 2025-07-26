@@ -1,5 +1,4 @@
 const modalRoot = document.getElementById('participantsModalRoot');
-const currentUserId = 1;
 
 
 function showModal(modalElem) {
@@ -27,7 +26,8 @@ async function joinTournament(tid, teamName) {
         const response = await fetch(`${API_BASE}/tournaments/${tid}/participants`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUserId, teamName })
+            body: JSON.stringify({ teamName }),
+            credentials: 'include'
         });
 
         if (!response.ok) {

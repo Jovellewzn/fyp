@@ -414,6 +414,9 @@ function addComment(postId, content) {
                 noCommentsMsg.remove();
             }
 
+            const errorMsg = commentsList.querySelector('.error');
+            if (errorMsg) errorMsg.remove();
+
             // Add new comment to list
             const postForComment = posts.find(p => p.id == postId);
             const isPostOwner = currentUser && postForComment && currentUser.username === postForComment.username;

@@ -28,7 +28,9 @@ router.get('/:id', (req, res) => {
 // POST /api/discussions/:id
 router.post('/:id', (req, res) => {
   const { id: tid } = req.params;
-  const {title, description: content,userid} = req.body;
+  const {title, description: content} = req.body;
+  const cookie = req.cookies.user_id;
+  if (!cookie) return res.status(400).json({ error: 'userId is required' });
 
   if (!title) return res.status(400).json({ error: 'title is required' });
 
@@ -45,7 +47,7 @@ router.post('/:id', (req, res) => {
       INSERT INTO tournament_discussions
         (tournament_id, creator_id, title, description, is_pinned)
       VALUES (?,?,?,?,?)`;
-  db.run(insert, [tid, userid, title, content, false ], function (err2) {
+  db.run(insert, [tid, cookie, title, content, false ], function (err2) {
     if (err2) {
       if (err2.message.includes('UNIQUE'))
         return res.status(409).json({ error: 'Title already exists for this tournament' });
@@ -112,11 +114,13 @@ router.get('/:did/replies', (req, res) => {
 // POST /api/discussions/:id/replies
 router.post('/:id/replies', (req, res) => {
   const did = req.params.id;
-  const { content, userId } = req.body;
+  const { content } = req.body;
+  const cookie = req.cookies.user_id;
+  if (!cookie) return res.status(400).json({ error: 'userId is required' });
 
   db.run(
     'INSERT INTO discussion_replies (discussion_id, user_id, content) VALUES (?,?,?)',
-    [did, userId, content],
+    [did, cookie, content],
     function (err3) {
       if (err3) return res.status(500).json({ error: 'Internal Server Error' });
 
