@@ -30,6 +30,12 @@
             // User is authenticated
             const user = await response.json();
             
+              // Set username in welcome message if element exists
+            const usernameSpan = document.getElementById('username');
+            if (usernameSpan) {
+              usernameSpan.textContent = user.username;
+            }
+  
             const current = getCurrentPage();
             NAV_LINKS.forEach(link => {
               const a = document.createElement('a');
