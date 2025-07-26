@@ -5,8 +5,9 @@ const e = require('express');
 
 
 //GET /api/connections/users/:id
-router.get('/users/:id', (req, res) => {
-    const userId = req.params.id;
+router.get('/users', (req, res) => {
+    const userId = req.cookies.user_id; 
+    if (!userId) return res.status(401).json({ error: 'Not authenticated' });
     const result = {};
     const followersQuery = `
         SELECT uc.*, u.username as follower_username, u.email as follower_email
@@ -110,9 +111,10 @@ router.patch('/:id', (req, res) => {
     });
 });
 
-router.post('/follow/:id', (req, res) => {
-    const followerId = req.params.id;
+router.post('/follow', (req, res) => {
+    const followerId = req.cookies.user_id; 
     const { followingId } = req.body;
+    if (!followerId) return res.status(401).json({ error: 'Not authenticated' });
     
     // Check if the connection already exists
     db.get('SELECT * FROM user_connections WHERE follower_id = ? AND following_id = ?', [followerId, followingId], (err, row) => {

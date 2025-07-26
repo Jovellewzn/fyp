@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome to GameVibe Arena</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles/main.css">
+  <style>
+    body {
+      background: linear-gradient(120deg, #6a82fb 0%, #fc5c7d 100%);
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    .cover-container {
+      background: rgba(255,255,255,0.95);
+      border-radius: 24px;
+      box-shadow: 0 8px 32px #0002;
+      padding: 3rem 2.5rem;
+      text-align: center;
+      max-width: 700px;
+      width: 100%;
+      animation: fadeIn 0.7s;
+    }
+    .cover-logo {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #6a82fb;
+      margin-bottom: 0.5rem;
+      letter-spacing: 1px;
+    }
+    .cover-tagline {
+      color: #fc5c7d;
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+    }
+    .cover-btn {
+      display: block;
+      width: 100%;
+      margin: 1rem 0;
+      padding: 0.9rem 0;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #6a82fb, #fc5c7d);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .cover-btn:hover {
+      background: linear-gradient(90deg, #fc5c7d, #6a82fb);
+      transform: scale(1.03);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
+  </style>
+</head>
+<body>
+  <div class="cover-container">
+  <div class="cover-logo">GameVibe Arena</div>
+  <div class="cover-tagline">Unleash your skills. Connect. Compete. Celebrate.</div>
+<div class="cover-features">
+  <h3 style="color:#333; margin-bottom:1rem;">What We Offer</h3>
+  <ul style="list-style:none; padding:0; margin:0 0 2rem 0;">
+    <li style="margin-bottom:1rem;">
+      <div style="
+        display: flex; 
+        align-items: center; 
+        background: #fff; 
+        border-radius: 12px; 
+        box-shadow: 0 2px 8px #0001; 
+        padding: 1rem; 
+        border: 1px solid #eee;">
+        <span style="font-size:1.5rem; margin-right:0.7rem;">🏆</span>
+        <span style="color:#000;">Join and create online tournaments for your favorite games</span>
+      </div>
+    </li>
+    <li style="margin-bottom:1rem;">
+      <div style="
+        display: flex; 
+        align-items: center; 
+        background: #fff; 
+        border-radius: 12px; 
+        box-shadow: 0 2px 8px #0001; 
+        padding: 1rem; 
+        border: 1px solid #eee;">
+        <span style="font-size:1.5rem; margin-right:0.7rem;">🤝</span>
+        <span style="color:#000;">Connect and chat with fellow gamers</span>
+      </div>
+    </li>
+    <li style="margin-bottom:1rem;">
+      <div style="
+        display: flex; 
+        align-items: center; 
+        background: #fff; 
+        border-radius: 12px; 
+        box-shadow: 0 2px 8px #0001; 
+        padding: 1rem; 
+        border: 1px solid #eee;">
+        <span style="font-size:1.5rem; margin-right:0.7rem;">📢</span>
+        <span style="color:#000;">Share posts, comment, and celebrate your victories</span>
+      </div>
+    </li>
+    <li>
+      <div style="
+        display: flex; 
+        align-items: center; 
+        background: #fff; 
+        border-radius: 12px; 
+        box-shadow: 0 2px 8px #0001; 
+        padding: 1rem; 
+        border: 1px solid #eee;">
+        <span style="font-size:1.5rem; margin-right:0.7rem;">🔒</span>
+        <span style="color:#000;">Safe, friendly, and inclusive gaming community</span>
+      </div>
+    </li>
+  </ul>
+</div>
+  <button class="cover-btn" onclick="location.href='login.html'">Login</button>
+  <button class="cover-btn" onclick="location.href='signup.html'">Sign Up</button>
+</div>
+</body>
+</html>

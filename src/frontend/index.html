@@ -19,74 +19,30 @@
     </nav>
     <main class="dashboard-main">
       <section class="hero-section">
-        <h1>Welcome, <span class="username">GamerTag123</span>!</h1>
+        <h1>Welcome, <span id="username">Username</span>!</h1>
         <p class="tagline">Unleash your skills. Connect. Compete. Celebrate.</p>
       </section>
       <section class="dashboard-cards">
         <div class="dashboard-card actions-card" aria-label="Quick Actions">
           <h2>Quick Actions</h2>
           <div class="quick-actions">
-            <a href="#tournaments" class="action-btn">Join Tournament</a>
-            <a href="#social" class="action-btn">Create Post</a>
+            <a href="tournaments.html" class="action-btn">Join Tournament</a>
+            <a href="social.html" class="action-btn">Create Post</a>
             <a href="profile.html" class="action-btn">View Profile</a>
           </div>
         </div>
-        <div class="dashboard-card tournaments-card" aria-label="Upcoming Tournaments">
-          <h2>Upcoming Tournaments</h2>
-          <div class="scroll-list">
-            <!-- Placeholder: List tournaments from DB (CRUD: Read) -->
-            <div class="tournament-card">
-              <div class="tournament-title">Valorant Masters</div>
-              <div class="tournament-meta">FPS | Starts: 2025-07-20</div>
-              <div class="tournament-prize">Prize: $2,000</div>
-              <span class="tournament-status ongoing">Ongoing</span>
-            </div>
-            <div class="tournament-card">
-              <div class="tournament-title">Rocket League Cup</div>
-              <div class="tournament-meta">Sports | Starts: 2025-07-25</div>
-              <div class="tournament-prize">Prize: $1,000</div>
-              <span class="tournament-status upcoming">Upcoming</span>
-            </div>
-            <div class="tournament-card">
-              <div class="tournament-title">Apex Legends Showdown</div>
-              <div class="tournament-meta">Battle Royale | Starts: 2025-08-01</div>
-              <div class="tournament-prize">Prize: $1,500</div>
-              <span class="tournament-status upcoming">Upcoming</span>
-            </div>
+          <div class="dashboard-card tournaments-card">
+            <h2>Upcoming Tournaments</h2>
+            <div class="scroll-list"></div>
           </div>
-        </div>
-        <div class="dashboard-card posts-card" aria-label="Recent Social Posts">
-          <h2>Recent Social Posts</h2>
-          <div class="scroll-list">
-            <!-- Placeholder: List social posts from DB (CRUD: Read) -->
-            <div class="post-card">
-              <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User Avatar" class="post-avatar">
-              <div class="post-content">
-                <span class="post-username">GamerTag123</span>
-                <span class="post-type">Achievement</span>
-                <p class="post-preview">Just won the Valorant Masters! GG everyone!</p>
-              </div>
-            </div>
-            <div class="post-card">
-              <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="User Avatar" class="post-avatar">
-              <div class="post-content">
-                <span class="post-username">GameFanatic</span>
-                <span class="post-type">Post</span>
-                <p class="post-preview">Looking for a team for Rocket League Cup. DM me!</p>
-              </div>
-            </div>
+          <div class="dashboard-card posts-card">
+            <h2>Recent Social Posts</h2>
+            <div class="scroll-list"></div>
           </div>
-        </div>
-        <div class="dashboard-card pending-requests-card" aria-label="Pending Friend Requests">
-          <h2>📬 Friend Requests</h2>
-          <div class="scroll-list" id="pendingRequestsList">
-            <!-- Pending friend requests will be loaded here -->
-            <div class="loading-message">
-              <p>🔍 No pending friend requests</p>
-              <p style="font-size: 0.8rem; color: #888;">Friend requests will appear here when received</p>
-            </div>
+          <div class="dashboard-card friend-requests-card">
+            <h2>Friend Requests</h2>
+            <div class="scroll-list"></div>
           </div>
-        </div>
         <div id="chatbot-container">
   <button id="chatbot-toggle" aria-label="Open Chatbot">💬</button>
   <div id="chatbot-window" style="display:none;">
@@ -130,10 +86,10 @@
 
       
       function renderNavbar() {
-        const user = JSON.parse(localStorage.getItem('user'));
+        const user = JSON.parse(localStorage.getItem('currentUser'));
         navLinks.innerHTML = '';
         navAuth.innerHTML = '';
-        if (user && user.username) {
+        if (user) {
           // Logged in: show all links
           const current = getCurrentPage();
           NAV_LINKS.forEach(link => {
@@ -148,12 +104,11 @@
             navLinks.appendChild(a);
           });
           navAuth.innerHTML = `
-            <span class="nav-username">Hi, ${user.username}</span>
             <button class="nav-btn logout-btn" id="logoutBtn">Logout</button>
           `;
           document.getElementById('logoutBtn').onclick = () => {
-            localStorage.removeItem('user');
-            location.reload();
+            localStorage.removeItem('currentUser');
+            window.location.href = 'landing.html';
           };
         } else {
           // Not logged in: show only Login and Sign Up
@@ -219,6 +174,7 @@
                 </div>
               </div>
             `).join('');
+
           } else {
             pendingDiv.innerHTML = `
               <div class="loading-message">
@@ -259,10 +215,10 @@
       });
       
       // Initialize UserConnectionsCRUD for friend requests
-      let userConnectionsCRUD;
-      document.addEventListener('DOMContentLoaded', () => {
-        userConnectionsCRUD = new UserConnectionsCRUD();
-      });
+      // let userConnectionsCRUD;
+      // document.addEventListener('DOMContentLoaded', () => {
+      //   userConnectionsCRUD = new UserConnectionsCRUD();
+      // });
     </script>
     <script src="scripts/constants.js"></script>
     <script src="scripts/index.js"></script>
@@ -473,10 +429,7 @@
         transition: transform 0.18s, box-shadow 0.18s;
         position: relative;
       }
-      .dashboard-card:hover {
-        transform: translateY(-6px) scale(1.03);
-        box-shadow: 0 8px 32px #6a82fb55;
-      }
+
       .dashboard-card h2 {
         margin: 0 0 0.7rem 0;
         font-size: 1.25rem;

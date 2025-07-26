@@ -1,16 +1,17 @@
-const currentUser = 1;
+
 
 // Fetch user connections from the API
 async function fetchUserConnections() {
     try {
-        const response = await fetch(`${API_BASE}/connections/users/${currentUser}`, { credentials: 'include' });
+        const response = await fetch(`${API_BASE}/connections/users`,
+        { credentials: 'include' });
         const data = await response.json();
 
         updateFollowersTab(data.followers);
         updateFollowingTab(data.following);
         updatePendingTab(data.incoming_pending, data.outgoing_pending);
 
-        const response2 = await fetch(`${API_BASE}/users`);
+        const response2 = await fetch(`${API_BASE}/users`, { credentials: 'include' });
         const data2 = await response2.json();
         updateDiscoverUsersTab(data.following, data.incoming_pending, data.outgoing_pending, data2);
 
@@ -22,7 +23,7 @@ async function fetchUserConnections() {
 // Fetch post data
 async function fetchPosts() {
     try {
-        const response = await fetch(`${API_BASE}/users/${currentUser}/social_posts`);
+        const response = await fetch(`${API_BASE}/users/social_posts`, { credentials: 'include' });
         const posts = await response.json();
         console.log("Posts:", posts);
         updatePostsTab(posts);
@@ -50,7 +51,9 @@ async function removeConnection(connectionId) {
     if (confirm('Are you sure you want to remove this connection?')) {
         try {
             const response = await fetch(`${API_BASE}/connections/${connectionId}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                credentials: 'include',
+
             });
             fetchUserConnections();
         } catch (error) {
@@ -68,6 +71,7 @@ async function updateConnectionStatus(connectionId, status) {
     try {
         const response = await fetch(`${API_BASE}/connections/${connectionId}`, {
             method: 'PATCH',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -85,8 +89,9 @@ async function updateConnectionStatus(connectionId, status) {
 // This function will be called when the user clicks the "Follow" button on a user in the discover tab
 async function followUser(userId) {
     try {
-        const response = await fetch(`${API_BASE}/connections/follow/${currentUser}`, {
+        const response = await fetch(`${API_BASE}/connections/follow`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -204,7 +209,6 @@ function updateDiscoverUsersTab(followingList, upcoming_pending, outgoing_pendin
     console.log("followingList:", followingList);
     discoveruserList.forEach((user) => {
         const user_id = user.id;
-        if (user_id == currentUser) return;
         if (followingList.some((following) => following.following_id === user_id)) return;
         if (upcoming_pending.some((pending) => pending.follower_id === user_id)) return;
         if (outgoing_pending.some((pending) => pending.following_id === user_id)) return;
