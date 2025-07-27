@@ -325,7 +325,7 @@ function createDiscussionFormModal(tid) {
           <textarea id="discussion-content" name="content" class="form-control" rows="5" required placeholder="Share your thoughts..."></textarea>
         </div>
         <div class="form-actions" style="display:flex; justify-content:flex-end; gap:0.5rem;">
-          <button type="button" class="btn-secondary close-modal">Cancel</button>
+          <button type="button" class="btn-secondary cancel-to-discussions"">Cancel</button>
           <button type="submit" class="btn-primary">Start Discussion</button>
         </div>
       </form>
@@ -547,6 +547,20 @@ document.addEventListener('click', e => {
     loadDiscussions(tid);
     return;
   }
+
+  else if (e.target.matches('.cancel-to-discussions')) {
+  const form = e.target.closest('form');
+  let tid = form?.querySelector('[name="tid"]')?.value;
+  if (!tid) {
+    tid = e.target.closest('.modal-content')?.querySelector('[data-tid]')?.dataset.tid;
+  }
+  if (tid) {
+    loadDiscussions(tid);
+  } else {
+    discussionModalRoot.innerHTML = '';
+  }
+  return;
+}
 
 });
 

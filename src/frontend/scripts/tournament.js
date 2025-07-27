@@ -152,7 +152,7 @@ function createEditModal(participant, tid) {
                         <input type="text" id="edit-team-name" name="teamName" value="${participant.team_name || ''}" placeholder="Enter team name">
                     </div>
                     <div class="form-actions">
-                        <button type="button" class="btn-secondary close-modal">Cancel</button>
+                        <button type="button" class="btn-secondary cancel-to-participants">Cancel</button>
                         <button type="submit" class="btn-primary">Update</button>
                     </div>
                 </form>
@@ -200,6 +200,16 @@ document.addEventListener('click', e => {
         removeParticipant(pid, tid);
         return;
     }
+
+    else if (e.target.matches('.cancel-to-participants')) {
+    const tid = e.target.dataset.tid || modalRoot.querySelector('input[name="tid"]')?.value;
+    if (tid) {
+        showParticipants(tid);
+    } else {
+        modalRoot.innerHTML = '';
+    }
+    return;
+}
 });
 
 

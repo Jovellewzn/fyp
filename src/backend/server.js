@@ -1,8 +1,7 @@
+require('dotenv').config()
 const express = require('express');
 const cors = require("cors");
 const cookieParser = require('cookie-parser');
-const multer = require('multer');
-const fs = require('fs');
 
 const app = express()
 
@@ -13,6 +12,7 @@ const discussionsRoutes = require('./routes/discussions.js')
 const matchesRoutes = require('./routes/matches.js')    
 const postsRoutes = require('./routes/posts.js')
 const commentsRoutes = require('./routes/comments.js')
+const aiRoutes = require('./routes/jovAi.js')
 
 app.use(express.json());
 
@@ -38,6 +38,8 @@ app.use('/api/discussions', discussionsRoutes)
 app.use('/api/matches', matchesRoutes)
 app.use('/api/posts', postsRoutes)
 app.use('/api/comments', commentsRoutes)
+app.use('/api/ai', aiRoutes)
+
 app.use(express.static(__dirname + '/uploads'))
 
 app.listen(5000, () => {

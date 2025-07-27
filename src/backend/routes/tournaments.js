@@ -424,7 +424,7 @@ router.delete('/participants/:pid', (req, res) => {
 router.get('/:tid/teams', (req, res) => {
   const { tid } = req.params;
   const sql = `
-    SELECT team_name
+    SELECT DISTINCT team_name
       FROM tournament_participants tp
      WHERE tp.tournament_id = ?
   `;
