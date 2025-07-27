@@ -1,6 +1,6 @@
 
 const discussionModalRoot = document.getElementById('discussionModalRoot');
-let currentDiscussions =[];
+let currentDiscussions = [];
 let currentDid = null;
 let currentTid = null;
 
@@ -31,20 +31,20 @@ async function createDiscussion(tid, title, content) {
   try {
     const response = await fetch(`${API_BASE}/discussions/${tid}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },  
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, description: content }),
       credentials: 'include'
     });
-  
+
     if (!response.ok) {
       const errorData = await response.json();
       alert(`Error creating discussion: ${errorData.error}`);
     }
-    
+
     discussionModalRoot.innerHTML = '';
 
 
-     loadDiscussions(tid);
+    loadDiscussions(tid);
 
   } catch (err) {
     console.error(`Join failed: ${err.message}`);
@@ -58,7 +58,7 @@ function updateDiscussions(list) {
     return;
   }
 
-  discussionList.innerHTML = '';   
+  discussionList.innerHTML = '';
 
   if (list.length === 0) {
     discussionList.insertAdjacentHTML('beforeend', '<p>No discussions yet.</p>');
@@ -88,22 +88,22 @@ function updateDiscussions(list) {
 }
 
 //updtate discussion
-async function UpdateDiscussion(did, title, content,tid) {
-  try{
+async function UpdateDiscussion(did, title, content, tid) {
+  try {
     await fetch(`${API_BASE}/discussions/${did}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, content })
-    }); 
+    });
     loadDiscussions(tid);
   } catch (err) {
-      console.error(`Update failed: ${err.message}`);
+    console.error(`Update failed: ${err.message}`);
 
-    }
+  }
 }
 
 // Delete a discussion
-async function deleteDiscussion(did,tid) {
+async function deleteDiscussion(did, tid) {
   if (!confirm('Remove this discussion?')) return;
   try {
     await fetch(`${API_BASE}/discussions/${did}`, {
@@ -113,7 +113,7 @@ async function deleteDiscussion(did,tid) {
   } catch (err) {
     console.error(`Delete failed: ${err.message}`);
   }
-  
+
 }
 
 
@@ -123,13 +123,13 @@ async function loadReplies(did, tid, discussion) {
   try {
     const res = await fetch(`${API_BASE}/discussions/${did}/replies`);
     const replies = await res.json();
-    showDialog(createReplyFormModal(did, tid, discussion,replies));
+    showDialog(createReplyFormModal(did, tid, discussion, replies));
     updateReplies(replies);
   } catch (err) {
     console.error(`Failed to load replies: ${err.message}`);
   }
 }
-  
+
 // Post a new reply
 async function createReply(did, content, tid) {
   try {
@@ -139,7 +139,7 @@ async function createReply(did, content, tid) {
       body: JSON.stringify({ content }),
       credentials: 'include'
     });
-    
+
     discussionModalRoot.innerHTML = '';
     viewDiscussionDetails(did, tid);
 
@@ -152,6 +152,7 @@ async function createReply(did, content, tid) {
 function updateReplies(replies) {
   const repliesList = document.getElementById('replies-list');
   if (!repliesList) return console.warn('No #replies-list element found');
+  const userId = localStorage.getItem('currentUser');
 
   repliesList.innerHTML = '';
 
@@ -173,9 +174,15 @@ function updateReplies(replies) {
           <span class="date">On: ${new Date(reply.created_at).toLocaleDateString()}</span>
         </div>
         <div class="reply-actions">
+          ${reply.user_id == userId
+        ? `
+          
           <button class="btn-edit edit-reply-btn" data-rid="${reply.id}">Edit</button>
           <button class="btn-delete delete-reply-btn" data-rid="${reply.id}">Remove</button>
-        </div>
+            `
+        : ''
+      }
+
       </div>
     `;
 
@@ -209,8 +216,8 @@ async function viewDiscussionDetails(did, tid) {
     alert(`Error: ${err.message}`);
   }
 }
- //upate reply
-async function updateReply(rid,content) {
+//upate reply
+async function updateReply(rid, content) {
   try {
     await fetch(`${API_BASE}/discussions/replies/${rid}`, {
       method: 'PATCH',
@@ -223,7 +230,7 @@ async function updateReply(rid,content) {
     console.error(`Update reply failed: ${err.message}`);
   }
 }
- 
+
 //delete reply
 async function deleteReply(rid) {
   if (!confirm('Remove this reply?')) return;
@@ -242,6 +249,9 @@ async function deleteReply(rid) {
 function createDiscussionsModal(list, tid) {
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
+  const userId = localStorage.getItem('currentUser');
+
+  
   const items = list.map(d => `
     <div class="discussion-item">
       <h4>${d.title}</h4>
@@ -251,21 +261,28 @@ function createDiscussionsModal(list, tid) {
         <button class="btn-primary reply-discussion-btn" data-did="${d.id}">
           View Replies
         </button>
-          <button
-            class="btn-edit edit-discussion-btn"
-            data-did="${d.id}"
-            data-tid="${tid}"
-          >
-            Edit
-          </button>
+          ${
+          d.creator_id == userId
+                ? `
+         <button
+              class="btn-edit edit-discussion-btn"
+              data-did="${d.id}"
+              data-tid="${tid}"
+            >
+              Edit
+            </button>
 
-          <button
-            class="btn-delete delete-discussion-btn"
-            data-did="${d.id}"
-            data-tid="${tid}"
-          >
-            Remove
-          </button>
+            <button
+              class="btn-delete delete-discussion-btn"
+              data-did="${d.id}"
+              data-tid="${tid}"
+            >
+              Remove
+        </button>
+                `
+              : ''
+          }
+  
       </div>
     </div>
   `).join('');
@@ -319,9 +336,9 @@ function createDiscussionFormModal(tid) {
 
 //Reply form modal
 function createReplyFormModal(did, tid, discussion) {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
             <div class="modal-content">
                 <div class="modal-header">
                     <h2>Reply to: ${discussion}</h2>
@@ -342,8 +359,8 @@ function createReplyFormModal(did, tid, discussion) {
                 </form>
             </div>
         `;
-        return modal;
-    }
+  return modal;
+}
 
 function createDiscussionDetailsModal(discussion, tid) {
   const modal = document.createElement('div');
@@ -464,17 +481,17 @@ document.addEventListener('click', e => {
   }
 
   // open create reply form
-  else if (e.target.matches('.add-reply-btn')) { 
+  else if (e.target.matches('.add-reply-btn')) {
     const did = e.target.dataset.did;
     const discussion = e.target.dataset.discussion;
     const tid = e.target.closest('.modal-content').querySelector('[data-tid]').dataset.tid;
-    showDialog(createReplyFormModal(did, tid, discussion))  
+    showDialog(createReplyFormModal(did, tid, discussion))
     return;
   }
-  
+
 
   // open reply list
-  else if (e.target.matches('.reply-discussion-btn')) { 
+  else if (e.target.matches('.reply-discussion-btn')) {
     const did = e.target.dataset.did;
     const tid = e.target.closest('.modal-content').querySelector('[data-tid]').dataset.tid;
     viewDiscussionDetails(did, tid);
@@ -501,10 +518,10 @@ document.addEventListener('click', e => {
 
   // Back button
   else if (e.target.matches('.back-to-discussions-btn')) {
-  const tid = e.target.dataset.tid;
-  loadDiscussions(tid);
-  return;
-}
+    const tid = e.target.dataset.tid;
+    loadDiscussions(tid);
+    return;
+  }
 
   if (e.target.matches('.edit-reply-btn')) {
     const rid = e.target.dataset.rid;
@@ -529,7 +546,7 @@ document.addEventListener('click', e => {
     const tid = e.target.dataset.tid;
     loadDiscussions(tid);
     return;
-}
+  }
 
 });
 
@@ -542,18 +559,18 @@ document.addEventListener('submit', e => {
     const content = fd.get('content');
     createDiscussion(tid, title, content);
   }
-  
-  
+
+
   else if (e.target.matches('#reply-discussion-form')) {
     e.preventDefault();
     const fd = new FormData(e.target);
     const did = fd.get('did');
     const tid = fd.get('tid');
-    const content = fd.get('content'); 
+    const content = fd.get('content');
     createReply(did, content, tid);
   }
 
-    if (e.target.matches('#edit-discussion-form')) {
+  if (e.target.matches('#edit-discussion-form')) {
     e.preventDefault();
     const fd = new FormData(e.target);
     UpdateDiscussion(
@@ -568,8 +585,8 @@ document.addEventListener('submit', e => {
     e.preventDefault();
     const fd = new FormData(e.target);
     updateReply(
-    fd.get('rid'), 
-    fd.get('content'));
+      fd.get('rid'),
+      fd.get('content'));
   }
 
 });

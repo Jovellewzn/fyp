@@ -237,9 +237,39 @@ async function handleFriendRequestAction(connectionId, status) {
   }
 }
 
+// Load and render Joined Tournaments
+async function loadJoinedTournaments() {
+  const container = document.querySelector('.joined-tournaments-card .scroll-list');
+  if (!container) return;
+  container.innerHTML = '<div>Loading your tournaments...</div>';
+  try {
+    const res = await fetch(`${API_BASE}/tournaments/joined`, { credentials: 'include' });
+    const data = await res.json();
+    const tournaments = data.tournaments || [];
+    if (tournaments.length === 0) {
+      container.innerHTML = '<div>You have not joined any tournaments yet.</div>';
+      return;
+    }
+    container.innerHTML = tournaments.map(t => `
+      <div class="tournament-card">
+        <div class="tournament-title">${t.title}</div>
+        <div class="tournament-meta">
+          <span class="tournament-category">${t.game_type}</span> |
+          <span class="tournament-date">Starts: ${new Date(t.start_date).toLocaleDateString()}</span>
+        </div>
+        <div class="tournament-team">Team: ${t.team_name || 'N/A'}</div>
+        <div class="tournament-status">Status: ${t.participant_status || 'N/A'}</div>
+      </div>
+    `).join('');
+  } catch (err) {
+    container.innerHTML = '<div class="error">Failed to load your tournaments.</div>';
+  }
+}
+
 // Call these after DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   loadUpcomingTournaments();
   loadRecentPosts();
+  loadJoinedTournaments();
   loadFriendRequests();
 });

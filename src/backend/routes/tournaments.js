@@ -202,6 +202,26 @@ router.get('/upcoming', (req, res) => {
   });
 });
 
+router.get('/joined', (req, res) => {
+  const userId = req.cookies.user_id;
+  if (!userId) return res.status(401).json({ error: 'Unauthorized: No user ID' });
+
+  const sql = `
+    SELECT t.id, t.title, t.description, t.game_type, t.start_date, t.end_date, 
+           tp.team_name, tp.status AS participant_status, tp.registration_date
+    FROM tournament_participants tp
+    JOIN tournaments t ON tp.tournament_id = t.id
+    WHERE tp.user_id = ?
+    ORDER BY t.start_date ASC
+  `;
+
+  db.all(sql, [userId], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true, tournaments: rows, count: rows.length });
+  });
+});
+
+
 // Get a specific tournament by ID
 router.get('/:id', (req, res) => {
     const tournamentId = req.params.id;
@@ -414,6 +434,7 @@ router.get('/:tid/teams', (req, res) => {
     res.json(rows);
   });
 });
+
 
 
 

@@ -97,6 +97,7 @@ function createJoinModal(tid) {
 function createParticipantsModal(participants, tid) {
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
+    const userId = localStorage.getItem('currentUser');
 
     const participantsList = participants.map(participant => `
             <div class="participant-item">
@@ -106,8 +107,14 @@ function createParticipantsModal(participants, tid) {
                     <span class="participant-date">${new Date(participant.registration_date).toLocaleDateString()}</span>
                 </div>
                 <div class="participant-actions">
-                    <button class="btn-edit edit-participant-btn" data-participant-id="${participant.id}" data-tid="${tid}">Edit</button>
-                    <button class="btn-delete delete-participant-btn" data-participant-id="${participant.id}">Remove</button>
+                    ${
+                    participant.user_id == userId
+                        ? `
+                        <button class="btn-edit edit-participant-btn" data-participant-id="${participant.id}" data-tid="${tid}">Edit</button>
+                        <button class="btn-delete delete-participant-btn" data-participant-id="${participant.id}">Remove</button>
+                        `
+                        : ''
+                    }
                 </div>
             </div>
         `).join('');
@@ -124,8 +131,6 @@ function createParticipantsModal(participants, tid) {
                 </div>
             </div>
         `;
-    console.log(`Participants modal created for tournament ${tid}`);
-    console.log(`Modal content:`, modal.innerHTML);
     return modal;
 }
 
