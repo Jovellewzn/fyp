@@ -31,39 +31,37 @@
             <a href="profile.html" class="action-btn">View Profile</a>
           </div>
         </div>
+          <div class="dashboard-card joined-tournaments-card">
+            <h2>🏆 My Joined Tournaments 🏆</h2>
+            <div class="scroll-list"></div>
+          </div>
+          </div>
           <div class="dashboard-card tournaments-card">
-            <h2>Upcoming Tournaments</h2>
+            <h2> 🎮 Upcoming Tournaments 🎮</h2>
             <div class="scroll-list"></div>
           </div>
           <div class="dashboard-card posts-card">
-            <h2>Recent Social Posts</h2>
+            <h2>💬 Recent Social Posts 💬 </h2>
             <div class="scroll-list"></div>
           </div>
           <div class="dashboard-card friend-requests-card">
-            <h2>Friend Requests</h2>
+            <h2>👤 Friend Requests 👤</h2>
             <div class="scroll-list"></div>
           </div>
-        <div id="chatbot-container">
-  <button id="chatbot-toggle" aria-label="Open Chatbot">💬</button>
-  <div id="chatbot-window" style="display:none;">
-    <div id="chatbot-header">
-      <span>GameVibe Chatbot</span>
-      <button id="chatbot-close" aria-label="Close Chatbot">&times;</button>
-    </div>
-    <div id="chatbot-messages"></div>
-    <form id="chatbot-form">
-      <input type="text" id="chatbot-input" placeholder="Type your message..." autocomplete="off" required />
-      <button type="submit">Send</button>
-    </form>
-  </div>
-</div>
+
+
       </section>
     </main>
     <footer class="dashboard-footer">
       &copy; 2025 GameVibe Arena. All rights reserved.
     </footer>
-
+  
+ 
+  <script src="https://cdn.botpress.cloud/webchat/v3.2/inject.js" defer></script>
+  <script src="https://files.bpcontent.cloud/2025/07/18/07/20250718072806-0Y23HK31.js" defer></script>
+    
   <script src="scripts/chatbot.js" defer></script>
+  
     <script>
       // --- Navbar Auth & Responsive Logic ---
       const navLinks = document.getElementById('navLinks');
@@ -284,7 +282,7 @@
         --gradient-accent: linear-gradient(90deg, #232526 0%, #6a82fb 100%);
         --neon-blue: #6a82fb;
         --card-radius: 24px;
-        --nav-height: 64px;
+        --nav-height: 80px;
       }
       body {
         margin: 0;
@@ -356,7 +354,7 @@
         color: #fff;
         text-decoration: none;
         font-weight: 500;
-        font-size: 1rem;
+        font-size: 1.25rem;
         transition: color 0.2s, background 0.2s;
         position: relative;
         padding: 0.2rem 0.5rem;
