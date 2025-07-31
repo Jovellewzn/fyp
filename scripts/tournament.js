@@ -111,7 +111,7 @@ function createParticipantsModal(participants, tid) {
                     participant.user_id == userId
                         ? `
                         <button class="btn-edit edit-participant-btn" data-participant-id="${participant.id}" data-tid="${tid}">Edit</button>
-                        <button class="btn-delete delete-participant-btn" data-participant-id="${participant.id}">Remove</button>
+                        <button class="btn-delete delete-participant-btn" data-participant-id="${participant.id}" data-tid="${tid}">Remove</button>
                         `
                         : ''
                     }
@@ -196,7 +196,7 @@ document.addEventListener('click', e => {
     // Remove participant
     else if (e.target.matches('.delete-participant-btn')) {
         const pid = e.target.dataset.participantId;
-        const tid = document.querySelector('input[name="tid"]');
+        const tid = e.target.dataset.tid;
         removeParticipant(pid, tid);
         return;
     }
