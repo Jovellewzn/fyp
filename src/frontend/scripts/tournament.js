@@ -12,7 +12,6 @@ async function showParticipants(tid) {
         console.log(`Loading participants for tournament ${tid}`);
         const res = await fetch(`${API_BASE}/tournaments/${tid}/participants`);
         const list = await res.json();
-        console.log('Participants:', list);
         currentParticipants = list;
         showModal(createParticipantsModal(list, tid));
     } catch (err) {
@@ -196,7 +195,8 @@ document.addEventListener('click', e => {
     // Remove participant
     else if (e.target.matches('.delete-participant-btn')) {
         const pid = e.target.dataset.participantId;
-        const tid = document.querySelector('input[name="tid"]');
+        const tid = document.querySelector('input[name="tid"]').value;
+        console.log(`Removing participant ${pid} from tournament ${tid}`);
         removeParticipant(pid, tid);
         return;
     }

@@ -235,7 +235,7 @@ async function updateReply(rid, content) {
 async function deleteReply(rid) {
   if (!confirm('Remove this reply?')) return;
   try {
-    await fetch(`${API_BASE}/discussions/${currentDid}/replies/${rid}`, { method: 'DELETE' });
+    await fetch(`${API_BASE}/discussions/replies/${rid}`, { method: 'DELETE' });
     viewDiscussionDetails(currentDid, currentTid);
 
   } catch (err) {
