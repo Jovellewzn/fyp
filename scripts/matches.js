@@ -253,6 +253,11 @@ document.addEventListener('click', e => {
         }
       }
     }
+    else if (e.target.matches('.delete-match-btn')) {
+      e.preventDefault();
+      const mid = e.target.dataset.matchId;
+      deleteMatch(mid);
+    }
 
 });
 
