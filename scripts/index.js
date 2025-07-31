@@ -59,10 +59,10 @@
                   method: 'POST', 
                   credentials: 'include' 
                 });
-                window.location.href = '/';
+                window.location.href = 'landing.html'; // Redirect to landing page after logout
               } catch (error) {
                 console.error('Logout error:', error);
-                window.location.href = '/';
+                window.location.href = 'landing.html'; // Redirect to landing page on error
               }
             };
           } else {
